@@ -69,6 +69,7 @@ playwright-report/
 *.sqlite3
 
 # Keep Prisma migrations and schema tracked!
+apps/api/src/generated/
 
 
 # ==========================================
