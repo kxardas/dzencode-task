@@ -1,8 +1,20 @@
 # Orders & Products — API
 
 NestJS ESM backend with Prisma 7.10.0 and MySQL 8.4.11. The Prisma module
-connects on startup and disconnects during shutdown. HTTP endpoints are not
-implemented yet.
+connects on startup and disconnects during shutdown. `GET /api/orders`
+returns order summaries, product counts, and decimal totals in both currencies.
+`GET /api/orders/:id` returns one order with its associated product details;
+missing orders return 404 and invalid IDs return 400.
+`DELETE /api/orders/:id` deletes the order and its products and returns
+204 with no body. Other orders remain intact; missing or already deleted
+orders return 404, and invalid IDs return 400.
+
+`GET /api/products` lists all products with `order: { id, title }`.
+`GET /api/products?type=Monitors` filters by the whole type value, following
+MySQL's case/accent insensitive collation. Blank filters show all products;
+unknown types return an empty array. `GET /api/products/:id` returns one
+product. Both routes serialize money and dates consistently with order
+details; invalid IDs/queries return 400 and missing products return 404.
 
 Follow the [root setup guide](../../README.md) to start MySQL and configure
 `apps/api/.env`. The commands below run inside `apps/api`.
@@ -18,7 +30,8 @@ npm run start:dev
 
 The API defaults to port 3001 and the `/api` prefix. It loads this directory's
 `.env`, reads `FRONTEND_URL` for CORS, and requires a working `DATABASE_URL`.
-A 404 at `/api` is expected until application routes are implemented.
+Open http://localhost:3001/api/orders to inspect the JSON response. The bare
+`/api` path returns 404. Product creation and WebSocket routes remain planned.
 
 ## Database and checks
 
@@ -38,11 +51,20 @@ npm run build
 MySQL image. `db:deploy` applies existing migrations without creating new ones.
 `db:seed` builds and runs the additive development seed; existing rows are not
 overwritten. Build and test commands regenerate the ignored Prisma client.
+HTTP integration tests use compiled NestJS modules, so `test:e2e` builds first.
 
-Unit tests validate connection configuration. Integration tests verify actual
+Unit tests validate connection configuration, order-summary calculations,
+product serialization, and error handling.
+Integration tests verify the list route's JSON format, empty collections,
+stable ordering, order details, populated/empty order deletion, preservation
+of other orders and products, repeated deletion, ID validation, missing orders, and generic
+server errors, along with actual
 MySQL relationships, filtering, decimals, UTC dates, cascading deletion, foreign
 keys, and CHECK constraints. They require a running, migrated database and
-roll back test writes. Business endpoint and validation-form tests will be
-added with their respective features.
+roll back test writes. Products HTTP tests cover filtering/reset, ordering,
+order associations, serialization, empty results, validation, errors, and
+the disappearance of products after cascading order deletion.
+Tests for remaining endpoints and the validation form
+will be added with their respective features.
 
 See [data decisions and planned contracts](../../docs/data-contracts.md).
