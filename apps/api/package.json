@@ -31,7 +31,7 @@
     "db:status": "prisma migrate status",
     "db:studio": "prisma studio",
     "pretest": "prisma generate",
-    "pretest:e2e": "prisma generate",
+    "pretest:e2e": "npm run build",
     "db:schema:export": "node scripts/export-schema.mjs"
   },
   "dependencies": {
