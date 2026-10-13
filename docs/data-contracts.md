@@ -1,8 +1,9 @@
-# Data decisions and planned API contracts
+# Data decisions and API contracts
 
 The source example is `task/app.js`. The Prisma schema and initial migration
-implement the storage decisions below. REST endpoints and forms are planned;
-this document describes their intended contracts, not existing routes.
+implement the storage decisions below. Orders list/detail/deletion and
+Products list/detail/type filtering are implemented. Product creation and
+forms are planned; the POST row below describes an intended contract.
 
 ## Mapping from the assignment example
 
@@ -36,7 +37,7 @@ Deleting an order cascades to all of its products. This is our implementation
 decision; the PDF does not prescribe it. Confirmation UI must make this
 consequence clear. Products of other orders remain untouched.
 
-## Planned REST responses
+## REST response contracts
 
 Successful JSON responses use a `{ "data": ... }` envelope. IDs are numbers,
 `isNew` is a boolean, and monetary values are decimal strings with two digits
@@ -50,8 +51,41 @@ when building response DTOs; do not rely on its default JSON representation.
 | `DELETE /api/orders/:id` | `204 No Content` after successful cascading deletion |
 | `GET /api/products` | Product fields plus `order: { id, title }` |
 | `GET /api/products?type=Monitors` | Products of the selected type; no substring search |
-| `GET /api/products/:id` | One product with its associated order summary |
+| `GET /api/products/:id` | One product plus `order: { id, title }` |
 | `POST /api/products` | Created product, `201 Created`; supports the small validation form |
+
+The implemented list route sorts by `createdAt` descending, then `id`
+descending, and returns summaries without product-detail arrays. Only the
+prices of each order's associated products are fetched for its calculations.
+
+The detail route returns the same summary plus only that order's products,
+sorted by `createdAt` descending, then `id` descending. Each product includes
+`id`, `orderId`, `title`, `type`, `serialNumber`, `isNew`, `photo`,
+`specification`, `warrantyStart`, `warrantyEnd`, `priceUSD`, `priceUAH`, and
+`createdAt`. Photos may be null. Dates and money use the serialization rules
+above. Route IDs must be integers from 1 to 4294967295, matching MySQL's
+unsigned integer range; invalid IDs are rejected before database access.
+
+The deletion route performs one database delete filtered by the unique order
+ID. Foreign-key cascading removes associated products atomically. No matching
+order returns 404, including repeated deletion. Successful deletion returns
+204 with no body; it does not use the JSON envelope. Other orders and their
+products are preserved. The planned UI must request deletion only after the
+user confirms the dialog describing the cascade.
+
+Product list/detail responses include the same product fields as order
+details plus `order: { id, title }`. Lists sort by `createdAt` descending,
+then `id` descending. Product IDs use the same unsigned integer validation
+as order IDs. Missing products return 404.
+
+The optional `type` query is trimmed. Omitting it or providing a blank value
+returns all products. A supplied type uses equality matching, not substring
+search, following MySQL's case/accent insensitive `utf8mb4_unicode_ci`
+collation. Unknown types return `data: []`. Values must be a single string
+with at most 100 characters after trimming; repeated type values and unknown
+query parameters return 400 before database access. Removing the filter
+restores the full collection. Cascaded products no longer appear in these
+responses.
 
 An empty order has `productCount: 0` and totals of `"0.00"`; empty collections
 return `data: []`. Missing resources return 404, invalid IDs/inputs return 400,
