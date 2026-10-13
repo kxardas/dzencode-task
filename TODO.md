@@ -16,11 +16,11 @@ Use feature branches for development after the initial setup commit.
   installation, startup, environment examples, and current limitations.
   Node.js/npm versions are pinned; lockfile installation, lint, build, and
   production startup have been verified for both application skeletons.
-- [ ] **Define data and API contracts.** Map `task/app.js` fields to typed
+- [x] **Define data and API contracts.** Map `task/app.js` fields to typed
   entities and responses. Document currency defaults, date/time handling,
   money serialization, deletion behavior, and the small form's scope.
-- [ ] **Implement persistence and seed data.** Align Prisma CLI and Client
-  versions first. MySQL starts locally; Prisma schema and migrations
+- [x] **Implement persistence and seed data.** Prisma CLI and Client are
+  aligned at 7.10.0. MySQL starts locally; Prisma schema and migrations
   implement Order 1:N Product with decimal prices.
   Seeds include multiple product types, an empty order, and varied prices.
   Include an equivalent schema file that opens in MySQL Workbench.
@@ -62,7 +62,8 @@ Use feature branches for development after the initial setup commit.
   Verify browser REST and WebSocket connectivity in the deployed environment.
 - [ ] **Perform the submission review.** Start from a fresh clone using the
   README; manually check routes, reference layouts, long titles, empty data,
-  error handling, deletion, and multiple tabs. Record the deployed demo video,
+  error handling, deletion, multiple tabs, and the schema import in MySQL
+  Workbench. Record the deployed demo video,
   add demo/video links, review Git history, and complete developer sign-off.
 
 ## Junior+ enhancements — scope to be decided

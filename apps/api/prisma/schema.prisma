@@ -1,0 +1,41 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Order {
+  id          Int       @id @default(autoincrement()) @db.UnsignedInt
+  title       String    @db.VarChar(255)
+  description String    @db.Text
+  createdAt   DateTime  @default(now()) @db.DateTime(3)
+  products    Product[]
+
+  @@map("orders")
+}
+
+model Product {
+  id            Int      @id @default(autoincrement()) @db.UnsignedInt
+  orderId       Int      @db.UnsignedInt
+  serialNumber  String   @db.VarChar(100)
+  isNew         Boolean  @default(true)
+  photo         String?  @db.VarChar(2048)
+  title         String   @db.VarChar(255)
+  type          String   @db.VarChar(100)
+  specification String   @db.Text
+  warrantyStart DateTime @db.DateTime(3)
+  warrantyEnd   DateTime @db.DateTime(3)
+  priceUSD      Decimal  @db.Decimal(12, 2)
+  priceUAH      Decimal  @db.Decimal(12, 2)
+  createdAt     DateTime @default(now()) @db.DateTime(3)
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([type])
+  @@map("products")
+}
