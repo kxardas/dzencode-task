@@ -24,12 +24,16 @@ Use feature branches for development after the initial setup commit.
   implement Order 1:N Product with decimal prices.
   Seeds include multiple product types, an empty order, and varied prices.
   Include an equivalent schema file that opens in MySQL Workbench.
-- [ ] **Implement Orders API.** List and detail endpoints return only each
-  order's products, correct counts, and totals in USD/UAH. Deletion follows
-  the documented relationship policy; missing/invalid IDs return clear errors.
-- [ ] **Implement Products API.** List, detail, and type-filter endpoints
+- [x] **Finish Orders API.** List, detail, and deletion routes are implemented
+  and tested: correct counts, independent decimal totals, UTC dates, and empty
+  states. Details include only associated products. Deletion returns 204 and
+  cascades to its products while preserving other orders and products.
+  Missing/invalid IDs return 404/400; repeated deletion returns 404.
+- [x] **Implement Products API.** List, detail, and type-filter endpoints
   return correct order associations and consistent responses. Invalid inputs
   and missing products are handled without leaking database errors.
+  Filtering/reset, empty results, price/date serialization, stable ordering,
+  and visibility after cascading deletion are verified against MySQL.
 - [ ] **Build the shared frontend foundation.** Configure Redux Toolkit and
   RTK Query without duplicating server data. Add Bootstrap/SCSS/BEM layout,
   Orders/Products navigation, active-route styling, responsive behavior,
