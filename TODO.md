@@ -35,18 +35,22 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   and missing products are handled without leaking database errors.
   Filtering/reset, empty results, price/date serialization, stable ordering,
   and visibility after cascading deletion are verified against MySQL.
-- [ ] **Build the shared frontend foundation.** Configure Redux Toolkit and
+- [x] **Build the shared frontend foundation.** Configure Redux Toolkit and
   RTK Query without duplicating server data. Add Bootstrap/SCSS/BEM layout,
   Orders/Products navigation, active-route styling, responsive behavior,
   loading/error/empty states, and route transitions matching the references.
   The shared layout, placeholder routes, root redirect, active navigation,
   mobile navigation, and reduced-motion-aware CSS transitions are implemented.
   Web lint, TypeScript, build, and desktop/mobile browser review pass.
-  Redux/RTK Query and data-fetching states remain for the next step.
+  Redux/RTK Query is connected without duplicated server data. Orders renders
+  real API data with loading, error/retry, empty, and background-refresh states.
+  Five frontend tests cover these behaviors and cache reuse.
 - [ ] **Build the Orders page.** Show names, counts, dates in two formats,
   and totals in both currencies. Selection opens a closable side panel;
   cancellation preserves data, confirmed deletion updates affected caches,
   and deleting the selected order leaves no stale panel.
+  The API-backed summary list, counts, both date formats, and both currency
+  totals are implemented. Selection/detail panels and deletion UI remain.
 - [ ] **Build the Products page.** Display all required fields and associated
   order titles. One type select filters products; resetting restores all
   products and empty results show a clear message.
@@ -61,6 +65,9 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   Vitest/React Testing Library and CI. Verify totals, filtering, selection,
   deletion confirmation/cancellation, validation, API errors, and socket
   connection tracking. Both applications pass applicable checks.
+  Frontend Vitest/React Testing Library is configured; Orders fetching tests
+  pass. CI and remaining feature coverage are planned. Review the existing
+  ESLint dependency-chain advisory reported by npm audit before submission.
 - [ ] **Package the full environment with Docker Compose.** Web, API, and
   MySQL start with `docker compose up --build`. Migrations and seed setup are
   documented, database data persists, and configuration uses environment
