@@ -5,7 +5,8 @@ Target submission: October 25, 2026.
 Work in the order below. Add meaningful tests alongside each feature.
 Check an item only when its completion criteria have been verified.
 The assignment sources are in `task/`; standing project rules are in `AGENTS.md`.
-Use feature branches for development after the initial setup commit.
+Continue ordinary development directly on `main`, as agreed with the developer.
+Keep commits small and meaningful; commit/push only when explicitly requested.
 
 ## Implementation and delivery
 
@@ -38,6 +39,10 @@ Use feature branches for development after the initial setup commit.
   RTK Query without duplicating server data. Add Bootstrap/SCSS/BEM layout,
   Orders/Products navigation, active-route styling, responsive behavior,
   loading/error/empty states, and route transitions matching the references.
+  The shared layout, placeholder routes, root redirect, active navigation,
+  mobile navigation, and reduced-motion-aware CSS transitions are implemented.
+  Web lint, TypeScript, build, and desktop/mobile browser review pass.
+  Redux/RTK Query and data-fetching states remain for the next step.
 - [ ] **Build the Orders page.** Show names, counts, dates in two formats,
   and totals in both currencies. Selection opens a closable side panel;
   cancellation preserves data, confirmed deletion updates affected caches,

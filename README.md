@@ -11,10 +11,13 @@ management. `GET /api/orders` returns order summaries with product counts and
 decimal totals in USD/UAH. `GET /api/orders/:id` returns one order with its
 associated products. `DELETE /api/orders/:id` deletes the order and its
 products. Products list, type filtering, and detail endpoints are implemented.
-Application pages and the create-product form are planned.
+The frontend has a shared header/sidebar layout and navigable Orders/Products
+placeholder pages. Inventory data integration and the create-product form
+are planned.
 
-The frontend root page is intentionally blank. The API connects to MySQL on
-startup. Open `/api/orders` for JSON data; the bare `/api` path returns 404.
+The frontend root redirects to `/orders`; `/products` is available through
+the menu. Pages currently show labeled placeholders. The API connects to MySQL
+on startup. Open `/api/orders` for JSON data; the bare `/api` path returns 404.
 
 See [TODO.md](TODO.md) for progress and
 [data decisions and planned contracts](docs/data-contracts.md) for the model,
@@ -22,9 +25,9 @@ currencies, UTC dates, deletion policy, and intended API responses.
 
 ## Technology stack
 
-- **Frontend:** Next.js App Router, React, TypeScript. Redux Toolkit/RTK Query,
-  Bootstrap 5, SCSS with BEM, Lucide React, and Socket.io Client are installed
-  for upcoming features.
+- **Frontend:** Next.js App Router, React, TypeScript. Redux Toolkit/RTK Query
+  and Socket.io Client are installed for upcoming features. Bootstrap 5,
+  SCSS with BEM, and Lucide React are used by the shared frontend layout.
 - **Backend:** NestJS with ESM and TypeScript, Prisma 7.10.0 and its MySQL driver
   adapter. Validation libraries and Socket.io are installed for upcoming features.
 - **Database:** MySQL 8.4.11, Prisma migrations, and decimal monetary columns.
@@ -106,7 +109,10 @@ npm --prefix apps/api run start:dev
 npm --prefix apps/web run dev
 ```
 
-Open http://localhost:3000. A blank page is expected at this stage.
+Open http://localhost:3000 to view the Orders page placeholder. Use the menu
+to switch to Products without a full-page reload. The shared layout adapts
+to mobile screens. Data lists, filtering, detail panels, confirmation dialogs,
+clock, and session counter are planned.
 The API listens on http://localhost:3001 with the `/api` prefix. Open
 http://localhost:3001/api/orders to view order summaries. The bare `/api` path
 and other unimplemented routes return 404. CORS uses `FRONTEND_URL`.
