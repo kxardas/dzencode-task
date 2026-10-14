@@ -1,0 +1,133 @@
+@use "layout";
+
+:root {
+  --inventory-accent: #81b843;
+  --inventory-accent-dark: #4f7728;
+  --inventory-accent-soft: #f1f7e9;
+  --inventory-text: #2e3f47;
+  --inventory-muted: #657d89;
+  --inventory-border: #d5dfe3;
+  --inventory-background: #f3f6f7;
+  --inventory-header-height: 76px;
+  --inventory-sidebar-width: 200px;
+  --bs-body-font-family: Arial, Helvetica, sans-serif;
+  --bs-body-color: var(--inventory-text);
+  --bs-body-bg: var(--inventory-background);
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--inventory-accent-dark);
+  outline-offset: 4px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 100;
+  padding: 12px 20px;
+  border-radius: 4px;
+  color: #fff;
+  background: var(--inventory-accent-dark);
+  transform: translateY(-150%);
+
+  &:focus {
+    color: #fff;
+    transform: translateY(0);
+  }
+}
+
+.inventory-page {
+  width: 100%;
+  max-width: 1500px;
+  margin-inline: auto;
+
+  &__heading {
+    margin-bottom: 40px;
+  }
+
+  &__title {
+    margin: 0 0 12px;
+    font-size: clamp(26px, 2.5vw, 32px);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  &__description {
+    color: var(--inventory-muted);
+    line-height: 1.6;
+  }
+}
+
+.page-placeholder {
+  display: flex;
+  min-height: 300px;
+  padding: 40px 24px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--inventory-border);
+  border-radius: 4px;
+  background: #fff;
+
+  &__icon {
+    display: grid;
+    width: 68px;
+    height: 68px;
+    margin-bottom: 24px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--inventory-accent-dark);
+    background: var(--inventory-accent-soft);
+  }
+
+  &__title {
+    margin: 0 0 12px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  &__description {
+    max-width: 440px;
+    color: var(--inventory-muted);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}
+
+.page-transition {
+  animation: page-enter 180ms ease-out;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+
+  .sidebar__link {
+    transition: none;
+  }
+}
