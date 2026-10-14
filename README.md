@@ -11,12 +11,13 @@ management. `GET /api/orders` returns order summaries with product counts and
 decimal totals in USD/UAH. `GET /api/orders/:id` returns one order with its
 associated products. `DELETE /api/orders/:id` deletes the order and its
 products. Products list, type filtering, and detail endpoints are implemented.
-The frontend has a shared header/sidebar layout and navigable Orders/Products
-placeholder pages. Inventory data integration and the create-product form
+The frontend has a shared header/sidebar layout. Orders displays real data
+through RTK Query with loading, empty, error, and retry states. Products still
+shows a placeholder. Order selection/deletion UI and the create-product form
 are planned.
 
 The frontend root redirects to `/orders`; `/products` is available through
-the menu. Pages currently show labeled placeholders. The API connects to MySQL
+the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
 on startup. Open `/api/orders` for JSON data; the bare `/api` path returns 404.
 
 See [TODO.md](TODO.md) for progress and
@@ -25,14 +26,14 @@ currencies, UTC dates, deletion policy, and intended API responses.
 
 ## Technology stack
 
-- **Frontend:** Next.js App Router, React, TypeScript. Redux Toolkit/RTK Query
-  and Socket.io Client are installed for upcoming features. Bootstrap 5,
+- **Frontend:** Next.js App Router, React, TypeScript, Redux Toolkit/RTK Query.
+  Socket.io Client is installed for upcoming features. Bootstrap 5,
   SCSS with BEM, and Lucide React are used by the shared frontend layout.
 - **Backend:** NestJS with ESM and TypeScript, Prisma 7.10.0 and its MySQL driver
   adapter. Validation libraries and Socket.io are installed for upcoming features.
 - **Database:** MySQL 8.4.11, Prisma migrations, and decimal monetary columns.
 - **Testing:** Backend Vitest unit tests and integration tests against MySQL.
-  Frontend Vitest and React Testing Library setup is planned.
+  Frontend Vitest and React Testing Library tests use mocked fetch responses.
 - **Infrastructure:** Docker Compose runs MySQL locally. Web/API containers
   and production deployment are planned.
 
@@ -85,6 +86,7 @@ npm --prefix apps/web ci
 npm --prefix apps/api ci
 cp .env.example .env
 cp apps/api/.env.example apps/api/.env
+cp apps/web/.env.example apps/web/.env.local
 ```
 
 Start MySQL, apply committed migrations, and insert optional demo data:
@@ -109,10 +111,10 @@ npm --prefix apps/api run start:dev
 npm --prefix apps/web run dev
 ```
 
-Open http://localhost:3000 to view the Orders page placeholder. Use the menu
+Open http://localhost:3000 to view order summaries fetched from the API. Use the menu
 to switch to Products without a full-page reload. The shared layout adapts
-to mobile screens. Data lists, filtering, detail panels, confirmation dialogs,
-clock, and session counter are planned.
+to mobile screens. The Products list, filtering, order detail panels,
+confirmation dialogs, clock, and session counter are planned.
 The API listens on http://localhost:3001 with the `/api` prefix. Open
 http://localhost:3001/api/orders to view order summaries. The bare `/api` path
 and other unimplemented routes return 404. CORS uses `FRONTEND_URL`.
@@ -209,12 +211,12 @@ local `.env` files are ignored by Git.
 | API `.env` | `SHADOW_DATABASE_URL` | Separate database used by development migrations |
 | API `.env` | `PORT` | API port; defaults to 3001 |
 | API `.env` | `FRONTEND_URL` | Allowed CORS origin |
-| Web `.env.local` | `NEXT_PUBLIC_API_URL` | Reserved for upcoming REST requests |
+| Web `.env.local` | `NEXT_PUBLIC_API_URL` | REST API URL including `/api`; defaults to `http://localhost:3001/api` |
 | Web `.env.local` | `NEXT_PUBLIC_SOCKET_URL` | Reserved for upcoming Socket.io integration |
 
 Prisma CLI and the API load `apps/api/.env` without overriding process variables.
-The frontend supports Next.js environment files; copy its example to `.env.local`
-when those integrations are implemented. Percent-encode special characters in
+The frontend loads `.env.local`; restart it after changing public URLs and
+set production values before building. Percent-encode special characters in
 connection-URL credentials. Runtime URL query options are not supported yet.
 
 Changing `MYSQL_PORT` also requires updating both API connection URLs.
@@ -265,6 +267,7 @@ independently in USD/UAH; UAH is the primary display currency. Dates use UTC.
 
 ```bash
 npm --prefix apps/web run lint
+npm --prefix apps/web test
 npm --prefix apps/web run build
 npm --prefix apps/api run db:validate
 npm --prefix apps/api run lint
