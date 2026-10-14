@@ -113,6 +113,35 @@ describe("OrdersList with RTK Query", () => {
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
   });
 
+  it("selects an order, switches the panel, and clears selection on close", async () => {
+    fetchMock.mockResolvedValueOnce(response(orders));
+    renderList();
+    const first = await screen.findByRole("button", { name: orders[0].title });
+    const second = screen.getByRole("button", { name: orders[1].title });
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+
+    fireEvent.click(first);
+    expect(first).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(screen.getByRole("complementary")).getByRole("heading", {
+        name: orders[0].title,
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(second);
+    expect(first).toHaveAttribute("aria-pressed", "false");
+    expect(second).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(screen.getByRole("complementary")).getByRole("heading", {
+        name: orders[1].title,
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Закрыть" }));
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+    expect(second).toHaveAttribute("aria-pressed", "false");
+  });
+
   it("shows a safe error and retries successfully without reloading the page", async () => {
     fetchMock
       .mockResolvedValueOnce(

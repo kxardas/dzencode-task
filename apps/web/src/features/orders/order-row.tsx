@@ -2,15 +2,28 @@ import { List } from "lucide-react";
 import { formatFullDate, formatPrice, formatShortDate } from "@/lib/format";
 import type { OrderSummary } from "./types";
 
-export function OrderRow({ order }: { order: OrderSummary }) {
+interface OrderRowProps {
+  order: OrderSummary;
+  onSelect: (id: number) => void;
+  isSelected: boolean;
+}
+
+export function OrderRow({ order, onSelect, isSelected }: OrderRowProps) {
   return (
     <li>
       <article
-        className="order-row"
+        className={`order-row${isSelected ? " order-row--selected" : ""}`}
         aria-labelledby={`order-${order.id}-title`}
       >
         <h2 className="order-row__title" id={`order-${order.id}-title`}>
-          {order.title}
+          <button
+            type="button"
+            className="order-row__select"
+            aria-pressed={isSelected}
+            onClick={() => onSelect(order.id)}
+          >
+            {order.title}
+          </button>
         </h2>
         <div className="order-row__products">
           <span className="order-row__icon" aria-hidden="true">

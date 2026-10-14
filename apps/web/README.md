@@ -4,7 +4,9 @@ Next.js App Router frontend with a shared header and navigation for Orders
 and Products. `/` redirects to `/orders`. The Orders page loads real order
 summaries through RTK Query: names, product counts, two date formats, and USD/UAH
 totals. Loading, empty, error, retry, and background-refresh states are handled.
-Products still has a placeholder; order selection and deletion UI are planned.
+Selecting an order highlights its row and opens a closable panel with its title.
+The panel appears beside the list on desktop and below it on narrower screens.
+Products still has a placeholder; fetching panel products and deletion UI are planned.
 
 The application interface is in Russian, using the reference labels
 "Приходы" and "Продукты". The HTML language is `ru`; accessible labels and
@@ -59,6 +61,7 @@ npm run build
 ```
 
 Vitest, React Testing Library, and jsdom exercise real RTK Query requests with
-mocked fetch responses. Five tests cover loading/data formatting, empty
-collections, safe errors and retry, cache reuse, and failed background refresh.
+mocked fetch responses. Six tests cover loading/data formatting, empty
+collections, safe errors and retry, cache reuse, failed background refresh,
+and order selection, switching, and panel closing.
 These tests do not require the API or MySQL.

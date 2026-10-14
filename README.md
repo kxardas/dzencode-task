@@ -13,8 +13,8 @@ associated products. `DELETE /api/orders/:id` deletes the order and its
 products. Products list, type filtering, and detail endpoints are implemented.
 The frontend has a shared header/sidebar layout. Orders displays real data
 through RTK Query with loading, empty, error, and retry states. Products still
-shows a placeholder. Order selection/deletion UI and the create-product form
-are planned.
+shows a placeholder. Selecting an order opens a closable title panel.
+Fetching the panel's products, deletion UI, and the create-product form are planned.
 
 The frontend root redirects to `/orders`; `/products` is available through
 the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
@@ -113,7 +113,7 @@ npm --prefix apps/web run dev
 
 Open http://localhost:3000 to view order summaries fetched from the API. Use the menu
 to switch to Products without a full-page reload. The shared layout adapts
-to mobile screens. The Products list, filtering, order detail panels,
+to mobile screens. The Products list, filtering, products within order panels,
 confirmation dialogs, clock, and session counter are planned.
 The API listens on http://localhost:3001 with the `/api` prefix. Open
 http://localhost:3001/api/orders to view order summaries. The bare `/api` path

@@ -44,13 +44,15 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   Web lint, TypeScript, build, and desktop/mobile browser review pass.
   Redux/RTK Query is connected without duplicated server data. Orders renders
   real API data with loading, error/retry, empty, and background-refresh states.
-  Five frontend tests cover these behaviors and cache reuse.
+  Six frontend tests cover these behaviors, cache reuse, and selection/panel closing.
 - [ ] **Build the Orders page.** Show names, counts, dates in two formats,
   and totals in both currencies. Selection opens a closable side panel;
   cancellation preserves data, confirmed deletion updates affected caches,
   and deleting the selected order leaves no stale panel.
   The API-backed summary list, counts, both date formats, and both currency
-  totals are implemented. Selection/detail panels and deletion UI remain.
+  totals are implemented. Selection, row highlighting, and a closable title
+  panel are implemented with desktop/mobile layouts. Fetching/displaying the
+  panel's products and deletion UI remain.
 - [ ] **Build the Products page.** Display all required fields and associated
   order titles. One type select filters products; resetting restores all
   products and empty results show a clear message.
