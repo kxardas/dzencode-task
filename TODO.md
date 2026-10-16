@@ -7,6 +7,8 @@ Check an item only when its completion criteria have been verified.
 The assignment sources are in `task/`; standing project rules are in `AGENTS.md`.
 Continue ordinary development directly on `main`, as agreed with the developer.
 Keep commits small and meaningful; commit/push only when explicitly requested.
+The developer selected the entire Junior+ matrix on October 16, 2026.
+All nine Junior+ competencies below are included in the delivery scope.
 
 ## Implementation and delivery
 
@@ -47,8 +49,8 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   Web lint, TypeScript, build, and desktop/mobile browser review pass.
   Redux/RTK Query is connected without duplicated server data. Orders renders
   real API data with loading, error/retry, empty, and background-refresh states.
-  Forty-five frontend tests cover these behaviors, cache reuse, selection/panel
-  closing, deletion, product retrieval/filtering, and the validated create form.
+  Frontend tests cover these behaviors, cache reuse, selection/panel closing,
+  deletion, product retrieval/filtering, and the validated create form.
 - [ ] **Build the Orders page.** Show names, counts, dates in two formats,
   and totals in both currencies. Selection opens a closable side panel;
   cancellation preserves data, confirmed deletion updates affected caches,
@@ -85,13 +87,78 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   POST /api/products and an inline form in the selected order panel are
   implemented. Both layers validate strings, dates/order, and decimal prices.
   Pending controls, cancellation, failures/retry, successful persistence, and
-  refreshing products/counts/totals are covered. API checks pass: 23 unit and
-  20 database/HTTP tests; web checks pass: 45 tests. Browser review remains
+  refreshing products/counts/totals are covered. API checks pass: 26 unit,
+  20 database/HTTP, and two Socket.io tests; web checks pass: 66 tests. Browser review remains
   pending because native browser automation is unavailable.
 - [ ] **Implement the clock and active-session counter.** Time updates
   automatically. Socket.io counts connected tabs on the server and broadcasts
   changes; opening, closing, refreshing, and reconnecting tabs work without
   permanently duplicated sessions or event listeners.
+  Header components display Russian local date/time and server counts from
+  `sessions:count`. The server tracks socket IDs in memory; disconnected clients
+  are removed and temporary transport failures trigger client reconnection.
+  Pending/disconnected UI hides stale counts. Clock and counter effects clean
+  up on unmount; header components persist during client-side navigation.
+  Eight frontend and three gateway unit tests pass. Two integration tests verify
+  broadcasts, closing, refresh/replacement, and automatic reconnection using
+  real polling and WebSocket clients. Both apps pass lint, type checks, and
+  production builds; the running API serves products and Socket.io handshakes.
+  Browser review remains pending because native browser automation is unavailable.
+
+## Junior+ requirements — included in delivery
+
+Implement this entire section after verifying the core inventory behavior and
+before final deployment/submission. The feature designs below are project
+decisions for demonstrating the PDF's technologies.
+
+- [x] **TypeScript.** Both applications use typed models, API inputs/responses,
+  and component contracts. Type checking and production builds pass. Preserve
+  these guarantees while adding the remaining features.
+- [x] **Unit tests.** Vitest and React Testing Library cover inventory behavior,
+  validation, errors, clock updates, and session counting. The verified suite
+  includes 66 frontend tests and 26 backend unit tests. Add behavioral tests
+  alongside each remaining feature; integration tests supplement unit coverage.
+- [ ] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
+  Hydration and RTK Query caching/mutations preserve counts, filtering, and
+  deletion/creation behavior. Verify initial HTML and client-side navigation;
+  installing Next.js or rendering a static shell does not complete this item.
+  Orders SSR is implemented: request-time uncached API fetch, streamed inventory
+  markup, one-time RTK Query initialization per store, and client retry fallback.
+  Thirteen added tests verify fetching, hydration without duplicate list requests,
+  request isolation, failures, and preservation of mutations during navigation.
+  Existing creation coverage also uses an SSR-initialized list. Web lint, type
+  checks, 66 tests, and production build pass. Production HTTP verification found
+  all four API order titles in four actual HTML rows, outside script payloads.
+  Products SSR and actual browser navigation review remain.
+- [ ] **Internationalization (i18n).** Provide Russian and Ukrainian translations
+  for navigation, inventory UI, forms, validation, connection/error/empty states,
+  dates, prices, and accessible labels. Russian remains the default. Switching
+  languages updates the HTML language and preserves the current application state.
+- [ ] **Web Storage.** Persist a non-sensitive preference, such as the selected
+  language or product type, across reloads. Restore it without hydration errors;
+  missing, invalid, or unavailable storage must not break the application.
+  Keep credentials and JWTs out of Web Storage.
+- [ ] **JWT authentication.** Add a small login/logout flow and protect inventory
+  mutations on the server. Use hashed passwords and expiring, validated JWTs
+  with an HttpOnly cookie and appropriate protection for cookie-authenticated
+  writes. Verify unauthenticated/expired/invalid-token requests and logout.
+  Document evaluator access; configure secrets outside Git. Keep registration,
+  complex roles, and unrelated account management outside this feature.
+- [ ] **Charts.** Show a chart of product counts by type using actual inventory
+  data. Creation/deletion updates the figures; empty/error states and an
+  accessible textual equivalent are available. Verify the values against the API.
+- [ ] **Maps.** Display an office location on an interactive map with a marker
+  and a readable address. Use configurable, clearly identified demo coordinates;
+  provide an accessible address fallback and handle map-loading failures.
+  Document external map/tile requirements and attribution; do not add delivery
+  tracking or require browser geolocation.
+- [ ] **Lazy loading.** Defer a meaningful noncritical feature, such as the chart
+  or office map. Show a loading state and verify its code loads on demand and
+  still works after client-side navigation. Confirm actual bundle/network
+  behavior rather than counting ordinary route splitting as sufficient evidence.
+
+## Release and delivery
+
 - [ ] **Complete behavioral tests and automated checks.** Configure frontend
   Vitest/React Testing Library and CI. Verify totals, filtering, selection,
   deletion confirmation/cancellation, validation, API errors, and socket
@@ -112,21 +179,3 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   error handling, deletion, multiple tabs, and the schema import in MySQL
   Workbench. Record the deployed demo video,
   add demo/video links, review Git history, and complete developer sign-off.
-
-## Junior+ enhancements — scope to be decided
-
-The PDF does not clarify whether all listed Junior+ tools are required.
-Confirm the intended scope and document delivered enhancements and omissions.
-
-- [ ] **Actual SSR.** Initial HTML includes real order/product data; client
-  hydration, navigation, and subsequent RTK Query mutations remain correct.
-- [ ] **Internationalization.** Agreed languages cover UI labels, validation,
-  dates, and prices consistently.
-- [ ] **Web Storage.** Persist an agreed UI preference and restore it without
-  hydration errors or duplicating server data.
-- [ ] **Lazy loading.** Defer a meaningful noncritical component or feature
-  and verify its loading state and behavior.
-
-JWT, charts, and maps remain unscheduled until the developer chooses a
-relevant use case. TypeScript and unit tests are part of the implementation
-checklist above. Do not add unrelated features to tick technology boxes.
