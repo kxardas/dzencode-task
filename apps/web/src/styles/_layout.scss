@@ -32,9 +32,60 @@
     }
   }
 
-  &__description {
+  &__status {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+  }
+}
+
+.header-clock {
+  display: flex;
+  min-width: 226px;
+  gap: 4px;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 1.4;
+
+  &__weekday {
     color: var(--inventory-muted);
-    font-size: 14px;
+    text-transform: capitalize;
+  }
+
+  &__details,
+  &__time {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  &__time {
+    gap: 6px;
+    font-variant-numeric: tabular-nums;
+
+    svg {
+      color: var(--inventory-accent-dark);
+    }
+  }
+}
+
+.session-counter {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--inventory-accent-dark);
+  font-size: 13px;
+  white-space: nowrap;
+
+  &__value {
+    min-width: 2ch;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &--disconnected {
+    color: var(--inventory-muted);
   }
 }
 
@@ -79,7 +130,9 @@
     letter-spacing: 0.04em;
     text-decoration: none;
     text-transform: uppercase;
-    transition: background-color 160ms ease, border-color 160ms ease;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease;
 
     &:hover {
       color: var(--inventory-text);
@@ -113,10 +166,44 @@
   }
 
   .top-menu {
-    padding: 0 20px;
+    padding: 0 16px;
 
-    &__description {
+    &__brand {
       font-size: 12px;
+
+      svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    &__status {
+      gap: 12px;
+    }
+  }
+
+  .header-clock {
+    min-width: 0;
+    font-size: 11px;
+
+    &__details {
+      gap: 3px;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    &__weekday {
+      display: none;
+    }
+  }
+
+  .session-counter {
+    font-size: 12px;
+
+    &__label {
+      display: none;
+    }
+    &__value {
+      min-width: 1ch;
     }
   }
 

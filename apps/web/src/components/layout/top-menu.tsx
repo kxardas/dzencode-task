@@ -1,5 +1,7 @@
 import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { HeaderClock } from "./header-clock";
+import { SessionCounter } from "./session-counter";
 
 export function TopMenu() {
   return (
@@ -12,7 +14,10 @@ export function TopMenu() {
         <ShieldCheck size={36} strokeWidth={1.8} aria-hidden="true" />
         <span>Inventory</span>
       </Link>
-      <p className="top-menu__description mb-0">Приходы и продукты</p>
+      <div className="top-menu__status">
+        <HeaderClock />
+        <SessionCounter />
+      </div>
     </header>
   );
 }
