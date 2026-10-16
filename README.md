@@ -11,9 +11,9 @@ management. `GET /api/orders` returns order summaries with product counts and
 decimal totals in USD/UAH. `GET /api/orders/:id` returns one order with its
 associated products. `DELETE /api/orders/:id` deletes the order and its
 products. Products list, type filtering, and detail endpoints are implemented.
-The frontend has a shared header/sidebar layout. Orders server-renders real
-summaries and initializes RTK Query for subsequent updates, with loading, empty,
-error, and retry states. Products displays
+The frontend has a shared header/sidebar layout. Orders and Products server-render
+real inventory and initialize RTK Query for subsequent updates, with loading,
+empty, error, and retry states. Products displays
 all inventory with type filtering, warranty dates, USD/UAH prices, and associated
 order titles. Selecting an order opens a closable panel with its products.
 Order deletion requires confirmation, handles pending/error states, updates the
@@ -131,12 +131,14 @@ The API listens on http://localhost:3001 with the `/api` prefix. Open
 http://localhost:3001/api/orders to view order summaries. The bare `/api` path
 and other unimplemented routes return 404. CORS uses `FRONTEND_URL`.
 
-Orders fetches initial inventory on the Next.js server for each request and
+Orders and Products fetch initial inventory on the Next.js server for each request and
 includes it in streamed HTML. The browser initializes the RTK Query cache from
 that data without repeating the initial list request. Later mutations and
 refreshes still use RTK Query. Existing client data takes precedence over reused
 route payloads. If the server-side API request fails, client fetching and retry
-remain available. Products and selected order details still load in the browser.
+remain available. Product type filtering and selected order details load in the browser.
+Successful inventory mutations also prevent an older prefetched Products payload
+from overwriting current data, including on the first visit to Products.
 
 ## Orders API
 
@@ -374,8 +376,8 @@ full application containers, deployment instructions, live demo/video links,
 and final delivery checks will be added in subsequent stages.
 
 The full Junior+ matrix is included in the delivery scope, as selected on
-October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders are
-implemented. Products SSR, Russian/Ukrainian i18n (Russian by default), JWT authentication for inventory
+October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders and Products
+are implemented. Russian/Ukrainian i18n (Russian by default), JWT authentication for inventory
 mutations, a persisted non-sensitive preference, inventory charts, an office
 location map, and meaningful lazy loading remain planned. These features are
 tracked with completion criteria in [TODO.md](TODO.md)
