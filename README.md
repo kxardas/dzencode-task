@@ -11,13 +11,15 @@ management. `GET /api/orders` returns order summaries with product counts and
 decimal totals in USD/UAH. `GET /api/orders/:id` returns one order with its
 associated products. `DELETE /api/orders/:id` deletes the order and its
 products. Products list, type filtering, and detail endpoints are implemented.
-The frontend has a shared header/sidebar layout. Orders displays real data
-through RTK Query with loading, empty, error, and retry states. Products displays
+The frontend has a shared header/sidebar layout. Orders server-renders real
+summaries and initializes RTK Query for subsequent updates, with loading, empty,
+error, and retry states. Products displays
 all inventory with type filtering, warranty dates, USD/UAH prices, and associated
 order titles. Selecting an order opens a closable panel with its products.
 Order deletion requires confirmation, handles pending/error states, updates the
 cached list, and closes the deleted order's panel. A validated create-product
-form is available within a selected order's panel.
+form is available within a selected order's panel. The shared header displays
+the browser's local date/time and a server-maintained active-tab counter.
 
 The frontend root redirects to `/orders`; `/products` is available through
 the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
@@ -30,13 +32,14 @@ currencies, UTC dates, deletion policy, and intended API responses.
 ## Technology stack
 
 - **Frontend:** Next.js App Router, React, TypeScript, Redux Toolkit/RTK Query.
-  Socket.io Client is installed for upcoming features. Bootstrap 5,
+  Socket.io Client receives live session counts. Bootstrap 5,
   SCSS with BEM, and Lucide React are used by the shared frontend layout.
 - **Backend:** NestJS with ESM and TypeScript, Prisma 7.10.0 and its MySQL driver
-  adapter. Validation libraries and Socket.io are installed for upcoming features.
+  adapter, DTO validation, and a Socket.io gateway for active sessions.
 - **Database:** MySQL 8.4.11, Prisma migrations, and decimal monetary columns.
-- **Testing:** Backend Vitest unit tests and integration tests against MySQL.
-  Frontend Vitest and React Testing Library tests use mocked fetch responses.
+- **Testing:** Backend Vitest unit tests, MySQL integration tests, and real
+  Socket.io client tests. Frontend Vitest and React Testing Library tests use
+  mocked fetch responses and socket events.
 - **Infrastructure:** Docker Compose runs MySQL locally. Web/API containers
   and production deployment are planned.
 
@@ -122,10 +125,18 @@ Open http://localhost:3000 to view order summaries fetched from the API. Use the
 to switch to Products without a full-page reload. The shared layout adapts
 to mobile screens. Order panels show product titles, serial numbers, placeholder
 icons, and new/used condition. Products offers a type select with a reset option,
-loading/error handling, and empty results. The clock and session counter are planned.
+loading/error handling, and empty results. The header shows the local date/time
+and active connected tabs.
 The API listens on http://localhost:3001 with the `/api` prefix. Open
 http://localhost:3001/api/orders to view order summaries. The bare `/api` path
 and other unimplemented routes return 404. CORS uses `FRONTEND_URL`.
+
+Orders fetches initial inventory on the Next.js server for each request and
+includes it in streamed HTML. The browser initializes the RTK Query cache from
+that data without repeating the initial list request. Later mutations and
+refreshes still use RTK Query. Existing client data takes precedence over reused
+route payloads. If the server-side API request fails, client fetching and retry
+remain available. Products and selected order details still load in the browser.
 
 ## Orders API
 
@@ -226,6 +237,33 @@ fields, preserves values after failure, blocks duplicate submissions while
 saving, and refreshes product lists, the order's products, count, and totals
 after success. Images remain placeholders; image upload is not implemented.
 
+## Clock and active sessions
+
+The header uses Russian date/time formatting in the browser's local time zone.
+It updates once per second, including the date at midnight. A placeholder is
+rendered on the server and until the first timer tick to keep hydration consistent.
+Inventory creation/warranty dates still use UTC as described above.
+
+Socket.io connects to `NEXT_PUBLIC_SOCKET_URL` (default `http://localhost:3001`),
+using the default `/socket.io` transport path and root namespace. Do not append
+`/api` to this URL. The API broadcasts `sessions:count` with `{ "count": 2 }`
+whenever a connection is added or removed; a newly connected tab receives the
+current total as well. Each connected tab counts once, independent of its route.
+
+The gateway keeps socket IDs in memory for one backend instance. This counts
+connections, not unique users. Closing/unmounting a tab disconnects its socket;
+silent network failures are eventually removed by Socket.io's default heartbeat
+(25-second ping interval and 20-second timeout). Refreshes can briefly overlap
+connections but do not leave permanent duplicates. The client reconnects after
+temporary transport failures and receives a fresh count. Until a count arrives,
+or while disconnected, the UI shows a dash with a connection status instead of
+a stale number. The counter is shared across route navigation; listeners and
+connections are cleaned up on unmount.
+
+To check manually, open two tabs and verify the total increases; close one and
+verify it decreases. Refresh a tab and switch between Orders/Products, then
+restart the API and confirm the counter recovers without accumulating sessions.
+
 ## Environment variables
 
 Root `.env.example` configures the MySQL container. `apps/api/.env.example`
@@ -243,10 +281,11 @@ local `.env` files are ignored by Git.
 | API `.env` | `PORT` | API port; defaults to 3001 |
 | API `.env` | `FRONTEND_URL` | Allowed CORS origin |
 | Web `.env.local` | `NEXT_PUBLIC_API_URL` | REST API URL including `/api`; defaults to `http://localhost:3001/api` |
-| Web `.env.local` | `NEXT_PUBLIC_SOCKET_URL` | Reserved for upcoming Socket.io integration |
+| Web `.env.local` | `API_URL` | Optional server-only REST base URL including `/api`; falls back to `NEXT_PUBLIC_API_URL`, then localhost |
+| Web `.env.local` | `NEXT_PUBLIC_SOCKET_URL` | Socket.io server origin without `/api`; defaults to `http://localhost:3001` |
 
 Prisma CLI and the API load `apps/api/.env` without overriding process variables.
-The frontend loads `.env.local`; restart it after changing public URLs and
+The frontend loads `.env.local`; restart it after changing URLs and
 set production values before building. Percent-encode special characters in
 connection-URL credentials. Runtime URL query options are not supported yet.
 
@@ -312,7 +351,9 @@ Database integration tests require a running, migrated MySQL database:
 npm --prefix apps/api run test:e2e
 ```
 
-HTTP integration tests build and exercise the compiled NestJS modules.
+HTTP and Socket.io integration tests build and exercise the compiled NestJS modules.
+Socket tests use an isolated server with two clients over polling and WebSocket,
+covering count broadcasts, closing, refreshing, and automatic reconnection.
 Integration-test writes are rolled back; fixture records are not deleted.
 MySQL auto-increment counters can advance during rolled-back tests.
 
@@ -330,7 +371,15 @@ npm --prefix apps/web run start
 
 Compose currently provides the database only. Web and API run through npm;
 full application containers, deployment instructions, live demo/video links,
-remaining REST endpoints, and WebSocket behavior will be added in subsequent stages.
+and final delivery checks will be added in subsequent stages.
+
+The full Junior+ matrix is included in the delivery scope, as selected on
+October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders are
+implemented. Products SSR, Russian/Ukrainian i18n (Russian by default), JWT authentication for inventory
+mutations, a persisted non-sensitive preference, inventory charts, an office
+location map, and meaningful lazy loading remain planned. These features are
+tracked with completion criteria in [TODO.md](TODO.md)
+and must be verified before final submission.
 
 MySQL data persists in a named volume. To stop the local database while
 preserving it:

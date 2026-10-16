@@ -1,8 +1,8 @@
 # Orders & Products — Web
 
 Next.js App Router frontend with a shared header and navigation for Orders
-and Products. `/` redirects to `/orders`. The Orders page loads real order
-summaries through RTK Query: names, product counts, two date formats, and USD/UAH
+and Products. `/` redirects to `/orders`. The Orders page server-renders real
+order summaries and initializes RTK Query with them: names, product counts, two date formats, and USD/UAH
 totals. Loading, empty, error, retry, and background-refresh states are handled.
 Selecting an order highlights its row and opens a closable panel with its products:
 placeholder icons, titles, serial numbers, and new/used condition.
@@ -28,8 +28,8 @@ highlighted and page-entry animations respect reduced-motion preferences.
 The root layout and route pages remain Server Components. The sidebar, Redux
 provider, and inventory lists use Client Components. The provider creates its own
 store instance, persists across navigation, and sits behind Suspense for
-Next.js Cache Components compatibility. Inventory data is fetched in the
-browser; this stage does not yet demonstrate SSR of inventory data.
+Next.js Cache Components compatibility. Orders reads inventory on the Next.js
+server at request time; Products and order details still fetch in the browser.
 
 ## Development
 
@@ -47,9 +47,43 @@ production builds embed public environment variables.
 Follow the [root setup guide](../../README.md) to run MySQL and the API, then
 open http://localhost:3000. The API must allow the frontend origin through
 `FRONTEND_URL`. If the API is unavailable, Orders shows a retryable error.
-The request timeout is ten seconds. Date/time and session counting are planned.
+The request timeout is ten seconds. `NEXT_PUBLIC_SOCKET_URL` points to the API
+origin without `/api` (default `http://localhost:3001`).
+For server-side requests, optional `API_URL` overrides `NEXT_PUBLIC_API_URL`.
+Use a base URL including `/api`; this allows an internal API address in Docker
+without exposing it to the browser. Restart Next.js after changing this value.
+
+## Header clock and sessions
+
+`HeaderClock` displays Russian date/time in the browser's local time zone and
+updates every second. Its initial placeholder keeps server/client HTML identical;
+the actual time appears on the first tick. The timer is removed on unmount.
+
+`SessionCounter` opens a Socket.io connection after mounting and subscribes to
+`sessions:count` (`{ count: number }`). Each connected tab counts once. The
+component stays mounted during route navigation, reconnects after temporary
+network failures, and removes listeners/disconnects on unmount. The UI displays
+a dash and connection status before receiving data or while disconnected.
+See the [session contract and manual check](../../README.md#clock-and-active-sessions).
 
 ## Data fetching
+
+`app/orders/page.tsx` waits for a real request with `connection()` before
+fetching `/orders` with `cache: "no-store"` and a ten-second timeout. This keeps
+inventory fresh per request and allows production builds without a running API.
+The surrounding layout Suspense boundary streams the dynamic inventory HTML.
+
+The page passes serializable summaries to `OrdersClient`. Before rendering
+`OrdersList`, the client boundary calls the store's `initializeOrders` method,
+which synchronously seeds the `getOrders` RTK Query cache. This happens once per
+store and only when that query is uninitialized. Stores are created per server
+request and per browser app instance. Existing client caches are preserved;
+reused route payloads cannot restore deleted orders, even after cache eviction.
+Hydration uses the same data and does not issue a second initial list request.
+
+If SSR fetching fails, the server logs a generic diagnostic and the page falls
+back to the existing client query, including safe errors and the retry button.
+Initial data is not retained as a separate list or ordinary Redux slice.
 
 `src/store/api.ts` defines typed order list/detail and product list queries, unwraps their
 `{ data }` responses, and provides a DELETE mutation. `src/store/store.ts`
@@ -84,7 +118,7 @@ npm run build
 ```
 
 Vitest, React Testing Library, and jsdom exercise real RTK Query requests with
-mocked fetch responses. Forty-five tests cover loading/data formatting, empty
+mocked fetch responses. Sixty-six tests cover loading/data formatting, empty
 collections, safe errors and retry, cache reuse, failed background refresh,
 order selection, switching, panel closing, and deletion confirmation/cancellation.
 Deletion coverage includes pending-state controls, duplicate submissions,
@@ -96,5 +130,13 @@ failure, and cascading deletion across unfiltered/filtered caches.
 Form tests cover input normalization, storage limits, actual dates, warranty
 ordering, pending controls, duplicate prevention, cancellation, HTTP/network
 errors, retry, and refreshing product lists and exact server-calculated totals
-after creation.
+after creation. Header tests cover midnight/time updates, consistent initial
+HTML, timer cleanup, session broadcasts, connection errors/recovery, and
+listener/connection cleanup under React Strict Mode.
+SSR tests cover request-time fetching, API address selection, server errors,
+actual server markup and hydration, isolated stores, empty collections,
+client-side recovery, successful deletion/navigation/cache eviction, and
+successful creation with a server-initialized list. A production HTTP response
+was compared with the running API: four order rows and their titles were present
+in actual HTML article elements, outside serialized script data.
 These tests do not require the API or MySQL.
