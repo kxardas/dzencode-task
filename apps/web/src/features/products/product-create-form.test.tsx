@@ -11,7 +11,7 @@ import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inventoryApi } from "@/store/api";
 import { makeStore, type AppStore } from "@/store/store";
-import { OrdersList } from "@/features/orders/orders-list";
+import { OrdersClient } from "@/features/orders/orders-client";
 import { ProductsList } from "./products-list";
 import { ProductCreateForm } from "./product-create-form";
 import type { Product } from "./types";
@@ -234,7 +234,19 @@ describe("Product creation form with RTK Query", () => {
     });
     render(
       <Provider store={store}>
-        <OrdersList />
+        <OrdersClient
+          initialOrders={[
+            {
+              id: 5,
+              title: "Test order",
+              description: "",
+              createdAt: "2026-10-01T00:00:00.000Z",
+              productCount: 0,
+              totalUSD: "0.00",
+              totalUAH: "0.00",
+            },
+          ]}
+        />
         <ProductsList />
       </Provider>,
     );
