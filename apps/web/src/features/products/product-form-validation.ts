@@ -1,8 +1,12 @@
+import type { MessageKey } from "@/i18n/messages";
 import type { CreateProductInput } from "./types";
 
 export type ProductFormValues = Omit<CreateProductInput, "orderId" | "photo">;
 export type ProductFormErrors = Partial<
-  Record<keyof ProductFormValues, string>
+  Record<
+    keyof ProductFormValues,
+    { key: MessageKey; values?: Record<string, number> }
+  >
 >;
 
 export function readProductForm(data: FormData): ProductFormValues {
@@ -38,28 +42,26 @@ export function validateProductForm(
     ["type", 100],
     ["serialNumber", 100],
   ] as const) {
-    if (!values[name].trim()) errors[name] = "Заполните это поле.";
+    if (!values[name].trim()) errors[name] = { key: "required" };
     else if (Array.from(values[name]).length > maxLength)
-      errors[name] = `Не более ${maxLength} символов.`;
+      errors[name] = { key: "maxLength", values: { maxLength } };
   }
   for (const name of ["warrantyStart", "warrantyEnd"] as const) {
-    if (!isValidDate(values[name]))
-      errors[name] = "Укажите корректную дату от 1000 до 9999 года.";
+    if (!isValidDate(values[name])) errors[name] = { key: "invalidDate" };
   }
   if (
     !errors.warrantyStart &&
     !errors.warrantyEnd &&
     values.warrantyEnd < values.warrantyStart
   ) {
-    errors.warrantyEnd = "Конец гарантии не может быть раньше начала.";
+    errors.warrantyEnd = { key: "reversedWarranty" };
   }
   for (const name of ["priceUSD", "priceUAH"] as const) {
     if (!/^\d{1,10}(\.\d{1,2})?$/.test(values[name])) {
-      errors[name] =
-        "Укажите цену от 0 до 9999999999.99, не более двух знаков после точки.";
+      errors[name] = { key: "invalidPrice" };
     }
   }
   if (Array.from(values.specification).length > 10000)
-    errors.specification = "Не более 10000 символов.";
+    errors.specification = { key: "maxLength", values: { maxLength: 10000 } };
   return errors;
 }

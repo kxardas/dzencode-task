@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/i18n/locale-provider";
+
 import { ClipboardList } from "lucide-react";
 import { PagePlaceholder } from "@/components/ui/page-placeholder";
 import { useGetOrdersQuery } from "@/store/api";
@@ -9,6 +11,7 @@ import { OrderDetailsPanel } from "./order-details-panel";
 import { OrderDeleteDialog } from "./order-delete-dialog";
 
 export function OrdersList() {
+  const { t } = useLocale();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
@@ -29,10 +32,11 @@ export function OrdersList() {
     <section className="inventory-page" aria-labelledby="orders-title">
       <div className="inventory-page__heading">
         <h1 className="inventory-page__title" id="orders-title">
-          Приходы{orders !== undefined && ` / ${orders.length}`}
+          {t("orders")}
+          {orders !== undefined && ` / ${orders.length}`}
         </h1>
         <p className="inventory-page__description mb-0">
-          Поступления оборудования и продукты в каждом приходе.
+          {t("ordersDescription")}
         </p>
       </div>
       {isLoading && (
@@ -41,28 +45,26 @@ export function OrdersList() {
             className="spinner-border spinner-border-sm"
             aria-hidden="true"
           />
-          <span>Загрузка приходов…</span>
+          <span>{t("loadingOrders")}</span>
         </div>
       )}
 
       {isError && (
         <div className="orders-error" role="alert">
-          <p className="mb-2">
-            Не удалось загрузить приходы. Попробуйте ещё раз.
-          </p>
+          <p className="mb-2">{t("ordersError")}</p>
           <button
             className="btn btn-outline-secondary btn-sm"
             type="button"
             disabled={isFetching}
             onClick={() => refetch()}
           >
-            {isFetching ? "Повторная загрузка…" : "Повторить"}
+            {isFetching ? t("retrying") : t("retry")}
           </button>
         </div>
       )}
       {isFetching && !isLoading && (
         <p className="orders-refresh" role="status">
-          Обновление приходов…
+          {t("refreshingOrders")}
         </p>
       )}
 
@@ -74,13 +76,13 @@ export function OrdersList() {
             {orders.length === 0 ? (
               <PagePlaceholder
                 icon={<ClipboardList size={32} strokeWidth={1.5} />}
-                title="Приходов пока нет"
-                description="Здесь появятся поступления оборудования и их общая стоимость."
+                title={t("noOrders")}
+                description={t("noOrdersDescription")}
               />
             ) : (
               <ul
                 className="orders-list list-unstyled mb-0"
-                aria-label="Список приходов"
+                aria-label={t("ordersList")}
                 aria-busy={isFetching}
               >
                 {orders.map((order) => (

@@ -18,9 +18,10 @@ values after failure and disables controls while saving. Success refreshes
 order summaries/details and product lists. Image inputs/uploads are not part
 of this form; existing placeholders remain.
 
-The application interface is in Russian, using the reference labels
-"Приходы" and "Продукты". The HTML language is `ru`; accessible labels and
-page metadata follow the same language.
+The application defaults to Russian, using the reference labels "Приходы" and
+"Продукты". The header's RU/UK select switches the interface to Ukrainian and
+updates HTML `lang`, accessible labels, page metadata, dates, and price formatting.
+Stored inventory data is displayed in its original language.
 
 Bootstrap 5 CSS provides shared utilities, with custom SCSS and BEM classes.
 The sidebar becomes horizontal navigation below 768px. Active routes are
@@ -113,6 +114,31 @@ resetting uses the unfiltered query. `currentData` prevents a previous filter's
 results from appearing during the next request. Loading, empty, error/retry,
 and failed background-refresh states are handled.
 
+## Localization and storage
+
+`src/i18n/messages.ts` defines typed RU/UK dictionaries and interpolation.
+`LocaleProvider` owns a per-provider preference store subscribed with
+`useSyncExternalStore`. Server rendering and initial hydration always use `ru`;
+the saved `inventory.locale` (`ru` or `uk`) is restored from `localStorage` after
+hydration. This can briefly display Russian before a saved Ukrainian preference
+appears. No language cookie or locale-specific route is required.
+
+Invalid/missing/inaccessible storage uses Russian. A blocked write still allows
+language switching in memory. Storage events synchronize other tabs; listeners
+are cleaned up. The preference does not contain credentials or inventory data.
+
+Switching the context preserves component and RTK Query state: selections,
+filters, form drafts, validation errors, and the existing socket. Validation
+returns locale-independent message keys and parameters. UI components translate
+those errors at render time. Inventory dates retain UTC; the header clock retains
+the browser's local time zone.
+
+Page client boundaries synchronize the document title and observe late Next.js
+streamed title updates so default-language server metadata cannot overwrite the
+selected translation. Observers are removed on unmount. The layout and route pages
+remain Server Components; passing them through the language provider does not
+change that boundary.
+
 ## Checks
 
 ```bash
@@ -122,7 +148,7 @@ npm run build
 ```
 
 Vitest, React Testing Library, and jsdom exercise real RTK Query requests with
-mocked fetch responses. Eighty-one tests cover loading/data formatting, empty
+mocked fetch responses. Ninety-two tests cover loading/data formatting, empty
 collections, safe errors and retry, cache reuse, failed background refresh,
 order selection, switching, panel closing, and deletion confirmation/cancellation.
 Deletion coverage includes pending-state controls, duplicate submissions,
@@ -150,3 +176,8 @@ and the active-tab sequence 1 → 2 → 2 after refresh → 1 on close.
 The [browser workflow report](../../docs/browser-verification.md) records the
 temporary fixture, resulting totals, navigation checks, and database comparison.
 The Vitest tests do not require the API or MySQL; the browser workflow uses both.
+Localization tests additionally cover defaults, invalid/blocked storage,
+persistence, cross-tab changes and cleanup, hydration with a saved Ukrainian
+preference, late metadata, draft/error/filter preservation, localized dates, and
+switching without another inventory request or socket connection. Test setup
+uses jsdom's origin-scoped storage instead of Node 26's optional native storage.

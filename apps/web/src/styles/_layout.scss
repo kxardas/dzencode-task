@@ -70,6 +70,12 @@
   }
 }
 
+.language-select {
+  width: 68px;
+  color: var(--inventory-accent-dark);
+  cursor: pointer;
+}
+
 .session-counter {
   display: inline-flex;
   gap: 6px;
@@ -178,8 +184,18 @@
     }
 
     &__status {
-      gap: 12px;
+      gap: 8px;
     }
+  }
+
+  .language-select {
+    width: 64px;
+    padding-left: 6px;
+    font-size: 11px;
+  }
+
+  .top-menu__brand span {
+    display: none;
   }
 
   .header-clock {
@@ -224,6 +240,18 @@
 
       > li {
         flex: 1;
+        min-width: 0;
+      }
+    }
+
+    &__link {
+      gap: 8px;
+      padding-inline: 4px;
+      font-size: 12px;
+      letter-spacing: 0.02em;
+
+      svg {
+        flex-shrink: 0;
       }
     }
   }

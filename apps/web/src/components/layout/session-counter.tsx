@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/i18n/locale-provider";
+
 import { UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { io, type Socket } from "socket.io-client";
@@ -9,6 +11,7 @@ interface SessionEvents {
 }
 
 export function SessionCounter() {
+  const { t } = useLocale();
   const [count, setCount] = useState<number | null>(null);
   const [isDisconnected, setIsDisconnected] = useState(false);
 
@@ -44,10 +47,10 @@ export function SessionCounter() {
 
   const label =
     count !== null
-      ? `Активные вкладки: ${count}`
+      ? t("activeTabs", { count })
       : isDisconnected
-        ? "Счётчик недоступен. Повторное подключение…"
-        : "Подключение счётчика…";
+        ? t("counterDisconnected")
+        : t("counterConnecting");
 
   return (
     <span
@@ -58,7 +61,7 @@ export function SessionCounter() {
     >
       <UsersRound size={18} aria-hidden="true" />
       <span className="session-counter__label" aria-hidden="true">
-        Вкладки
+        {t("tabs")}
       </span>
       <span className="session-counter__value" aria-hidden="true">
         {count ?? "—"}

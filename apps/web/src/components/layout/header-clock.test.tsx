@@ -1,12 +1,35 @@
 import { StrictMode } from "react";
 import { renderToString } from "react-dom/server";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { LocaleProvider } from "@/i18n/locale-provider";
+import { LanguageSelect } from "@/i18n/language-select";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HeaderClock } from "./header-clock";
 
 afterEach(() => vi.useRealTimers());
 
 describe("Header clock", () => {
+  it("changes date language without restarting the clock", () => {
+    window.localStorage.clear();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 9, 16, 12, 0, 0));
+    render(
+      <LocaleProvider>
+        <LanguageSelect />
+        <HeaderClock />
+      </LocaleProvider>,
+    );
+    act(() => vi.advanceTimersByTime(1000));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "uk" } });
+    expect(screen.getByLabelText("Поточні дата й час")).toHaveTextContent(
+      /п[’ʼ]ятниця/,
+    );
+    expect(screen.getByLabelText("Поточні дата й час")).toHaveTextContent(
+      "16 жовт. 2026",
+    );
+    expect(vi.getTimerCount()).toBe(1);
+    window.localStorage.clear();
+  });
   it("renders identical initial HTML regardless of the server's current time", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-01-01T00:00:00Z"));

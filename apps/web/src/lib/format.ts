@@ -1,26 +1,28 @@
-const shortDate = new Intl.DateTimeFormat("ru-RU", {
-  day: "2-digit",
-  month: "2-digit",
-  timeZone: "UTC",
-});
+import { intlLocales, type Locale } from "@/i18n/messages";
 
-const fullDate = new Intl.DateTimeFormat("ru-RU", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-export function formatShortDate(value: string): string {
-  return shortDate.format(new Date(value));
+export function formatShortDate(value: string, locale: Locale = "ru"): string {
+  return new Intl.DateTimeFormat(intlLocales[locale], {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "UTC",
+  }).format(new Date(value));
 }
 
-export function formatFullDate(value: string): string {
-  return fullDate.format(new Date(value));
+export function formatFullDate(value: string, locale: Locale = "ru"): string {
+  return new Intl.DateTimeFormat(intlLocales[locale], {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(value));
 }
 
-export function formatPrice(value: string, currency: "USD" | "UAH"): string {
-  return new Intl.NumberFormat("ru-RU", {
+export function formatPrice(
+  value: string,
+  currency: "USD" | "UAH",
+  locale: Locale = "ru",
+): string {
+  return new Intl.NumberFormat(intlLocales[locale], {
     style: "currency",
     currency,
     currencyDisplay: "code",

@@ -1,3 +1,4 @@
+import { useLocale } from "@/i18n/locale-provider";
 import { ChevronRight, List, Trash2 } from "lucide-react";
 import { formatFullDate, formatPrice, formatShortDate } from "@/lib/format";
 import type { OrderSummary } from "./types";
@@ -15,6 +16,7 @@ export function OrderRow({
   onDelete,
   isSelected,
 }: OrderRowProps) {
+  const { locale, t } = useLocale();
   return (
     <li>
       <article
@@ -36,7 +38,7 @@ export function OrderRow({
             <button
               type="button"
               className="order-row__icon"
-              aria-label={`Открыть приход «${order.title}»`}
+              aria-label={t("openOrder", { title: order.title })}
               aria-pressed={isSelected}
               onClick={() => onSelect(order.id)}
             >
@@ -44,30 +46,30 @@ export function OrderRow({
             </button>
             <div>
               <span className="order-row__count">{order.productCount}</span>
-              <span className="order-row__label">Продуктов</span>
+              <span className="order-row__label">{t("productCount")}</span>
             </div>
           </div>
           <div className="order-row__date">
-            <span className="visually-hidden">Дата прихода: </span>
+            <span className="visually-hidden">{t("orderDate")}</span>
             <time className="order-row__secondary" dateTime={order.createdAt}>
-              {formatShortDate(order.createdAt)}
+              {formatShortDate(order.createdAt, locale)}
             </time>
             <time dateTime={order.createdAt}>
-              {formatFullDate(order.createdAt)}
+              {formatFullDate(order.createdAt, locale)}
             </time>
           </div>
           <div className="order-row__totals">
-            <span className="visually-hidden">Общая стоимость: </span>
+            <span className="visually-hidden">{t("total")}</span>
             <span className="order-row__secondary">
-              {formatPrice(order.totalUSD, "USD")}
+              {formatPrice(order.totalUSD, "USD", locale)}
             </span>
-            <span>{formatPrice(order.totalUAH, "UAH")}</span>
+            <span>{formatPrice(order.totalUAH, "UAH", locale)}</span>
           </div>
         </div>
         <button
           type="button"
           className="order-row__delete"
-          aria-label={`Удалить приход «${order.title}»`}
+          aria-label={t("deleteOrder", { title: order.title })}
           onClick={() => onDelete(order.id)}
         >
           <Trash2 size={18} strokeWidth={1.8} aria-hidden="true" />

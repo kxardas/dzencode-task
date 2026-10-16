@@ -63,6 +63,27 @@ these checks; the original rows were unchanged.
 
 Automated coverage supplements these browser checks with HTTP/network failures,
 pending controls, cache invalidation, stale route payloads, and SSR hydration.
-The last verified frontend suite contains 81 tests; no application code changed
-during this workflow review. These checks do not claim pixel-perfect matching or
+The core workflow review used 81 frontend tests; no application code changed
+during that workflow review. These checks do not claim pixel-perfect matching or
 replace the final deployed-environment review.
+
+## Localization follow-up
+
+Also verified on October 16 after adding RU/UK dictionaries and language storage:
+
+- Selecting Monitors, then switching RU to UK preserved the two filtered rows.
+  Labels, warranty dates, header clock, accessible names, and the tab title changed.
+- Refresh restored Ukrainian from storage. Navigation to Orders retained Ukrainian
+  and the corresponding page title; late server metadata did not revert the title.
+- Opening an order and typing `Draft preserved` in the product form, then submitting
+  incomplete fields showed Ukrainian validation messages. Switching to Russian
+  preserved the selected order, draft text, and errors while translating the form.
+- The form was canceled without saving. No inventory data was created or deleted
+  during the localization checks.
+- The Ukrainian header, language select, and navigation fit the 320px responsive
+  viewport after adjusting mobile spacing. Safari was returned to normal mode
+  and Russian was selected at the end of the check.
+
+The updated automated suite contains 92 frontend tests. It supplements browser
+checks with HTML `lang` and description updates, blocked/invalid storage,
+cross-tab preference events, hydration, and socket/timer continuity.

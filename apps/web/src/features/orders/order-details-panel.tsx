@@ -1,3 +1,4 @@
+import { useLocale } from "@/i18n/locale-provider";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { ProductCreateForm } from "@/features/products/product-create-form";
@@ -11,6 +12,7 @@ interface OrderDetailsPanelProps {
 }
 
 export function OrderDetailsPanel({ order, onClose }: OrderDetailsPanelProps) {
+  const { t } = useLocale();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [wasCreated, setWasCreated] = useState(false);
   const {
@@ -33,7 +35,7 @@ export function OrderDetailsPanel({ order, onClose }: OrderDetailsPanelProps) {
           type="button"
           onClick={onClose}
           className="order-details-panel__close"
-          aria-label="Закрыть детали прихода"
+          aria-label={t("closeDetails")}
         >
           <X size={18} strokeWidth={2} aria-hidden="true" />
         </button>
@@ -59,34 +61,34 @@ export function OrderDetailsPanel({ order, onClose }: OrderDetailsPanelProps) {
           }}
         >
           <Plus size={16} aria-hidden="true" />
-          Добавить продукт
+          {t("addProduct")}
         </button>
       )}
       {wasCreated && (
         <p className="order-details-panel__success" role="status">
-          Продукт добавлен.
+          {t("productAdded")}
         </p>
       )}
 
-      {isFetching && !details && <p role="status">Загрузка продуктов…</p>}
+      {isFetching && !details && <p role="status">{t("loadingProducts")}</p>}
 
       {isError && (
         <div role="alert">
-          <p>Не удалось загрузить продукты.</p>
+          <p>{t("panelProductsError")}</p>
           <button
             type="button"
             className="btn btn-outline-secondary btn-sm"
             disabled={isFetching}
             onClick={() => refetch()}
           >
-            {isFetching ? "Повторная загрузка…" : "Повторить"}
+            {isFetching ? t("retrying") : t("retry")}
           </button>
         </div>
       )}
 
       {details &&
         (details.products.length === 0 ? (
-          <p>В этом приходе пока нет продуктов.</p>
+          <p>{t("noOrderProducts")}</p>
         ) : (
           <ul className="order-details-panel__products">
             {details.products.map((product) => (

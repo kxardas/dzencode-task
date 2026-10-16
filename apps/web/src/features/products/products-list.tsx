@@ -1,5 +1,7 @@
 "use client";
 
+import { useLocale } from "@/i18n/locale-provider";
+
 import { Package } from "lucide-react";
 import { useState } from "react";
 import { PagePlaceholder } from "@/components/ui/page-placeholder";
@@ -7,6 +9,7 @@ import { useGetProductsQuery } from "@/store/api";
 import { ProductRow } from "./product-row";
 
 export function ProductsList() {
+  const { locale, t } = useLocale();
   const [selectedType, setSelectedType] = useState("");
   const allProductsQuery = useGetProductsQuery(undefined, {
     refetchOnMountOrArgChange: 30,
@@ -24,21 +27,22 @@ export function ProductsList() {
     new Set(allProductsQuery.data?.map((product) => product.type) ?? []),
   );
   if (selectedType && !types.includes(selectedType)) types.push(selectedType);
-  types.sort((first, second) => first.localeCompare(second, "ru"));
+  types.sort((first, second) => first.localeCompare(second, locale));
 
   return (
     <section className="inventory-page" aria-labelledby="products-title">
       <div className="inventory-page__heading">
         <h1 className="inventory-page__title" id="products-title">
-          Продукты{products !== undefined && ` / ${products.length}`}
+          {t("products")}
+          {products !== undefined && ` / ${products.length}`}
         </h1>
         <p className="inventory-page__description mb-0">
-          Оборудование из всех приходов в одном месте.
+          {t("productsDescription")}
         </p>
       </div>
       <div className="products-filter">
         <label className="products-filter__label" htmlFor="products-type">
-          Тип продукта
+          {t("productType")}
         </label>
         <select
           id="products-type"
@@ -47,7 +51,7 @@ export function ProductsList() {
           disabled={allProductsQuery.data === undefined}
           onChange={(event) => setSelectedType(event.target.value)}
         >
-          <option value="">Все типы</option>
+          <option value="">{t("allTypes")}</option>
           {types.map((type) => (
             <option key={type} value={type}>
               {type}
@@ -62,48 +66,40 @@ export function ProductsList() {
             className="spinner-border spinner-border-sm"
             aria-hidden="true"
           />
-          <span>Загрузка продуктов…</span>
+          <span>{t("loadingProducts")}</span>
         </div>
       )}
       {isError && (
         <div className="products-error" role="alert">
-          <p className="mb-2">
-            Не удалось загрузить продукты. Попробуйте ещё раз.
-          </p>
+          <p className="mb-2">{t("productsError")}</p>
           <button
             type="button"
             className="btn btn-outline-secondary btn-sm"
             disabled={isFetching}
             onClick={() => refetch()}
           >
-            {isFetching ? "Повторная загрузка…" : "Повторить"}
+            {isFetching ? t("retrying") : t("retry")}
           </button>
         </div>
       )}
       {isFetching && products !== undefined && (
         <p className="products-refresh" role="status">
-          Обновление продуктов…
+          {t("refreshingProducts")}
         </p>
       )}
       {products !== undefined &&
         (products.length === 0 ? (
           <PagePlaceholder
             icon={<Package size={32} strokeWidth={1.5} />}
-            title={
-              selectedType
-                ? "Продукты этого типа не найдены"
-                : "Продуктов пока нет"
-            }
+            title={selectedType ? t("noFilteredProducts") : t("noProducts")}
             description={
-              selectedType
-                ? "Выберите другой тип или верните «Все типы»."
-                : "Здесь будут показаны товары из приходов."
+              selectedType ? t("resetFilterHint") : t("noProductsDescription")
             }
           />
         ) : (
           <ul
             className="products-list list-unstyled mb-0"
-            aria-label="Список продуктов"
+            aria-label={t("productsList")}
             aria-busy={isFetching}
           >
             {products.map((product) => (
