@@ -51,7 +51,7 @@ All nine Junior+ competencies below are included in the delivery scope.
   real API data with loading, error/retry, empty, and background-refresh states.
   Frontend tests cover these behaviors, cache reuse, selection/panel closing,
   deletion, product retrieval/filtering, and the validated create form.
-- [ ] **Build the Orders page.** Show names, counts, dates in two formats,
+- [x] **Build the Orders page.** Show names, counts, dates in two formats,
   and totals in both currencies. Selection opens a closable side panel;
   cancellation preserves data, confirmed deletion updates affected caches,
   and deleting the selected order leaves no stale panel.
@@ -68,29 +68,39 @@ All nine Junior+ competencies below are included in the delivery scope.
   duplicate submission and dismissal. Errors preserve data and allow retry;
   success closes the deleted order's panel while preserving other selections.
   Automated coverage includes populated/empty/last-order deletion, HTTP/network
-  failures, retry, and failed list refresh after deletion. Browser review remains
-  pending because the Safari automation connection was unavailable.
+  failures, retry, and failed list refresh after deletion. Safari desktop/320px
+  review verified lists, long titles, associated products, the modal, and cancellation.
+  Safari also verified confirmed deletion of a temporary populated QA order,
+  automatic panel closing, and no stale order/product rows after route navigation.
+  Database comparison confirmed cascading deletion and unchanged original records.
   Order row data and its delete action now use separate layout columns; removed
   the compact delete button's absolute positioning and excess reserved space.
-  Browser review of the layout correction remains pending for the same reason.
-- [ ] **Build the Products page.** Display all required fields and associated
+  Safari desktop review verified the corrected layout and separate delete column.
+- [x] **Build the Products page.** Display all required fields and associated
   order titles. One type select filters products; resetting restores all
   products and empty results show a clear message.
   API-backed rows, both price currencies, UTC warranty dates in two formats,
   associated order titles, server-side type filtering/reset, and loading/error/
   empty states are implemented and covered by eight product tests. Type options
   remain available while filtering. Order deletion updates all cached product
-  lists, including filtered lists, even if refresh fails. Browser review remains.
-- [ ] **Demonstrate form validation.** Implement the agreed small inventory
+  lists, including filtered lists, even if refresh fails. Safari desktop/320px
+  review verified rows, associations, filtering, and navigation. A browser-created
+  QA type was filtered successfully; deleting its order in another tab produced
+  the empty-result state on focus, and resetting restored all six original products.
+- [x] **Demonstrate form validation.** Implement the agreed small inventory
   form and its API endpoint. Frontend and backend reject invalid input,
   errors remain understandable, and successful submission refreshes data.
   POST /api/products and an inline form in the selected order panel are
   implemented. Both layers validate strings, dates/order, and decimal prices.
   Pending controls, cancellation, failures/retry, successful persistence, and
   refreshing products/counts/totals are covered. API checks pass: 26 unit,
-  20 database/HTTP, and two Socket.io tests; web checks pass: 66 tests. Browser review remains
-  pending because native browser automation is unavailable.
-- [ ] **Implement the clock and active-session counter.** Time updates
+  20 database/HTTP, and two Socket.io tests; web checks pass: 81 tests. Safari
+  verified the form layout, required-field errors, cancellation, and successful
+  creation. The order panel, count, USD/UAH totals, product list, type options,
+  associations, and warranty dates updated correctly. The temporary QA order and
+  product were then deleted; all original records matched the pre-check baseline.
+  See [browser verification](docs/browser-verification.md) for the checked workflow.
+- [x] **Implement the clock and active-session counter.** Time updates
   automatically. Socket.io counts connected tabs on the server and broadcasts
   changes; opening, closing, refreshing, and reconnecting tabs work without
   permanently duplicated sessions or event listeners.
@@ -103,7 +113,8 @@ All nine Junior+ competencies below are included in the delivery scope.
   broadcasts, closing, refresh/replacement, and automatic reconnection using
   real polling and WebSocket clients. Both apps pass lint, type checks, and
   production builds; the running API serves products and Socket.io handshakes.
-  Browser review remains pending because native browser automation is unavailable.
+  Safari verified ticking time, route navigation without extra sessions, and
+  the count sequence 1 → 2 → 2 after refreshing → 1 after closing the second tab.
 
 ## Junior+ requirements — included in delivery
 
@@ -116,9 +127,9 @@ decisions for demonstrating the PDF's technologies.
   these guarantees while adding the remaining features.
 - [x] **Unit tests.** Vitest and React Testing Library cover inventory behavior,
   validation, errors, clock updates, and session counting. The verified suite
-  includes 66 frontend tests and 26 backend unit tests. Add behavioral tests
+  includes 81 frontend tests and 26 backend unit tests. Add behavioral tests
   alongside each remaining feature; integration tests supplement unit coverage.
-- [ ] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
+- [x] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
   Hydration and RTK Query caching/mutations preserve counts, filtering, and
   deletion/creation behavior. Verify initial HTML and client-side navigation;
   installing Next.js or rendering a static shell does not complete this item.
@@ -129,7 +140,14 @@ decisions for demonstrating the PDF's technologies.
   Existing creation coverage also uses an SSR-initialized list. Web lint, type
   checks, 66 tests, and production build pass. Production HTTP verification found
   all four API order titles in four actual HTML rows, outside script payloads.
-  Products SSR and actual browser navigation review remain.
+  Products now uses the same request-time fetching and one-time cache initialization.
+  Fifteen added tests cover fetching/failure recovery, inventory HTML/hydration,
+  isolated requests, filtering/reset, and mutation preservation during navigation,
+  including mutations before the first Products visit and after cache eviction.
+  All 81 web tests, lint, TypeScript, and production build pass. Production HTTP
+  verification found six product article rows, all API titles and associated order
+  titles outside scripts. Safari verified direct loading and navigation between
+  Orders/Products; mutation/navigation combinations are covered by automated tests.
 - [ ] **Internationalization (i18n).** Provide Russian and Ukrainian translations
   for navigation, inventory UI, forms, validation, connection/error/empty states,
   dates, prices, and accessible labels. Russian remains the default. Switching

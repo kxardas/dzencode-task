@@ -28,8 +28,8 @@ highlighted and page-entry animations respect reduced-motion preferences.
 The root layout and route pages remain Server Components. The sidebar, Redux
 provider, and inventory lists use Client Components. The provider creates its own
 store instance, persists across navigation, and sits behind Suspense for
-Next.js Cache Components compatibility. Orders reads inventory on the Next.js
-server at request time; Products and order details still fetch in the browser.
+Next.js Cache Components compatibility. Orders and Products read inventory on the
+Next.js server at request time; type filtering and order details fetch in the browser.
 
 ## Development
 
@@ -68,18 +68,22 @@ See the [session contract and manual check](../../README.md#clock-and-active-ses
 
 ## Data fetching
 
-`app/orders/page.tsx` waits for a real request with `connection()` before
-fetching `/orders` with `cache: "no-store"` and a ten-second timeout. This keeps
+The Orders and Products pages wait for a real request with `connection()` before
+fetching their API lists with `cache: "no-store"` and a ten-second timeout. This keeps
 inventory fresh per request and allows production builds without a running API.
 The surrounding layout Suspense boundary streams the dynamic inventory HTML.
 
-The page passes serializable summaries to `OrdersClient`. Before rendering
-`OrdersList`, the client boundary calls the store's `initializeOrders` method,
-which synchronously seeds the `getOrders` RTK Query cache. This happens once per
+Each page passes serializable inventory to its client boundary (`OrdersClient`
+or `ProductsClient`). Before rendering the list, it calls the store's respective
+initializer, which synchronously seeds the matching RTK Query cache. This happens once per
 store and only when that query is uninitialized. Stores are created per server
 request and per browser app instance. Existing client caches are preserved;
 reused route payloads cannot restore deleted orders, even after cache eviction.
 Hydration uses the same data and does not issue a second initial list request.
+Successful product creation or order deletion disables Products bootstrapping
+for that store, even before the first Products visit. This prevents an earlier
+prefetched route payload from restoring stale inventory; RTK Query fetches current
+data when there is no cached list. Filtered queries remain independent.
 
 If SSR fetching fails, the server logs a generic diagnostic and the page falls
 back to the existing client query, including safe errors and the retry button.
@@ -118,7 +122,7 @@ npm run build
 ```
 
 Vitest, React Testing Library, and jsdom exercise real RTK Query requests with
-mocked fetch responses. Sixty-six tests cover loading/data formatting, empty
+mocked fetch responses. Eighty-one tests cover loading/data formatting, empty
 collections, safe errors and retry, cache reuse, failed background refresh,
 order selection, switching, panel closing, and deletion confirmation/cancellation.
 Deletion coverage includes pending-state controls, duplicate submissions,
@@ -137,6 +141,12 @@ SSR tests cover request-time fetching, API address selection, server errors,
 actual server markup and hydration, isolated stores, empty collections,
 client-side recovery, successful deletion/navigation/cache eviction, and
 successful creation with a server-initialized list. A production HTTP response
-was compared with the running API: four order rows and their titles were present
-in actual HTML article elements, outside serialized script data.
-These tests do not require the API or MySQL.
+was compared with the running API: four order rows and six product rows, their
+titles, and product order associations were present in actual HTML article
+elements, outside serialized script data. Safari review verified desktop and
+320px layouts, route navigation, product filtering/reset/empty results, dialog
+cancellation and confirmed deletion, empty form validation and successful creation,
+and the active-tab sequence 1 → 2 → 2 after refresh → 1 on close.
+The [browser workflow report](../../docs/browser-verification.md) records the
+temporary fixture, resulting totals, navigation checks, and database comparison.
+The Vitest tests do not require the API or MySQL; the browser workflow uses both.
