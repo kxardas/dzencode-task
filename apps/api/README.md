@@ -38,7 +38,12 @@ npm run start:dev
 The API defaults to port 3001 and the `/api` prefix. It loads this directory's
 `.env`, reads `FRONTEND_URL` for CORS, and requires a working `DATABASE_URL`.
 Open http://localhost:3001/api/orders to inspect the JSON response. The bare
-`/api` path returns 404. WebSocket routes remain planned.
+`/api` path returns 404. Socket.io shares the HTTP port, using `/socket.io`
+and the root namespace. `SessionsModule` broadcasts `sessions:count` with
+`{ count: number }` on connection/disconnection. Each socket ID counts once;
+counts are kept in memory for one API instance. CORS uses `FRONTEND_URL`.
+No client messages or authentication are required for this public counter.
+See the [session behavior](../../README.md#clock-and-active-sessions).
 
 ## Database and checks
 
@@ -79,7 +84,12 @@ order associations, serialization, empty results, validation, errors, and
 the disappearance of products after cascading order deletion.
 Creation tests cover real MySQL writes and returned values, exact order totals,
 duplicate serial numbers, deleted-parent handling, invalid input, and safe
-server errors. Test-created records are rolled back. Twenty-three unit tests
-and twenty database/HTTP integration tests pass.
+server errors. Test-created records are rolled back. Session unit tests check
+count updates, duplicate/disconnection handling, and reconnecting socket IDs.
+Socket.io integration tests use real polling/WebSocket clients and an isolated
+Nest server without a database to verify connection, closure, refresh, and
+automatic reconnection.
+The current suite has 26 unit tests, 20 database/HTTP integration tests,
+and two Socket.io integration tests.
 
 See [data decisions and planned contracts](../../docs/data-contracts.md).
