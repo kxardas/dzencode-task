@@ -20,6 +20,7 @@ Order deletion requires confirmation, handles pending/error states, updates the
 cached list, and closes the deleted order's panel. A validated create-product
 form is available within a selected order's panel. The shared header displays
 the browser's local date/time and a server-maintained active-tab counter.
+The header offers Russian/Ukrainian UI languages and remembers the choice locally.
 
 The frontend root redirects to `/orders`; `/products` is available through
 the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
@@ -266,6 +267,27 @@ To check manually, open two tabs and verify the total increases; close one and
 verify it decreases. Refresh a tab and switch between Orders/Products, then
 restart the API and confirm the counter recovers without accumulating sessions.
 
+## Interface language
+
+Use the RU/UK select in the header to switch between Russian and Ukrainian.
+Russian is the default. Navigation, inventory labels, forms and validation,
+loading/error/empty states, accessible labels, page titles/descriptions, dates,
+and price formatting follow the selected language. Inventory titles, types, and
+other stored user data retain their original text.
+
+The preference is stored as `inventory.locale` in browser `localStorage`, using
+`ru` or `uk`. It survives reloads and synchronizes across tabs of the same origin.
+Missing, invalid, or inaccessible storage falls back to Russian; switching still
+works for the current session if saving is blocked. Only this non-sensitive UI
+preference is stored there.
+
+The server always renders Russian inventory HTML. Hydration starts in Russian
+and then restores the saved language, avoiding server/client markup mismatches.
+Consequently a saved Ukrainian preference can briefly show Russian on a fresh
+load. Switching languages preserves the selected order, product filter, current
+form values and validation feedback, inventory cache, and socket connection.
+It does not reload the page or translate stored inventory data.
+
 ## Environment variables
 
 Root `.env.example` configures the MySQL container. `apps/api/.env.example`
@@ -377,8 +399,8 @@ and final delivery checks will be added in subsequent stages.
 
 The full Junior+ matrix is included in the delivery scope, as selected on
 October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders and Products
-are implemented. Russian/Ukrainian i18n (Russian by default), JWT authentication for inventory
-mutations, a persisted non-sensitive preference, inventory charts, an office
+are implemented, together with Russian/Ukrainian i18n and a persisted language
+preference. JWT authentication for inventory mutations, inventory charts, an office
 location map, and meaningful lazy loading remain planned. These features are
 tracked with completion criteria in [TODO.md](TODO.md)
 and must be verified before final submission.

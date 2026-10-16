@@ -1,5 +1,7 @@
 import { StrictMode } from "react";
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { LocaleProvider } from "@/i18n/locale-provider";
+import { LanguageSelect } from "@/i18n/language-select";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SessionCounter } from "./session-counter";
 
@@ -34,6 +36,27 @@ beforeEach(() => {
 });
 
 describe("Session counter", () => {
+  it("translates counts and disconnected states without recreating the socket", () => {
+    window.localStorage.clear();
+    render(
+      <LocaleProvider>
+        <LanguageSelect />
+        <SessionCounter />
+      </LocaleProvider>,
+    );
+    socket.receive("sessions:count", { count: 2 });
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "uk" } });
+    expect(screen.getByRole("status")).toHaveAccessibleName(
+      "Активні вкладки: 2",
+    );
+    socket.receive("disconnect");
+    expect(screen.getByRole("status")).toHaveAccessibleName(
+      "Лічильник недоступний. Повторне підключення…",
+    );
+    expect(io).toHaveBeenCalledOnce();
+    expect(socket.disconnect).not.toHaveBeenCalled();
+    window.localStorage.clear();
+  });
   it("waits for the server's count instead of showing a fabricated zero", () => {
     render(<SessionCounter />);
     expect(screen.getByRole("status")).toHaveAccessibleName(

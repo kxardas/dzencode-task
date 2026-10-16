@@ -94,7 +94,7 @@ All nine Junior+ competencies below are included in the delivery scope.
   implemented. Both layers validate strings, dates/order, and decimal prices.
   Pending controls, cancellation, failures/retry, successful persistence, and
   refreshing products/counts/totals are covered. API checks pass: 26 unit,
-  20 database/HTTP, and two Socket.io tests; web checks pass: 81 tests. Safari
+  20 database/HTTP, and two Socket.io tests; web checks pass: 92 tests. Safari
   verified the form layout, required-field errors, cancellation, and successful
   creation. The order panel, count, USD/UAH totals, product list, type options,
   associations, and warranty dates updated correctly. The temporary QA order and
@@ -127,7 +127,7 @@ decisions for demonstrating the PDF's technologies.
   these guarantees while adding the remaining features.
 - [x] **Unit tests.** Vitest and React Testing Library cover inventory behavior,
   validation, errors, clock updates, and session counting. The verified suite
-  includes 81 frontend tests and 26 backend unit tests. Add behavioral tests
+  includes 92 frontend tests and 26 backend unit tests. Add behavioral tests
   alongside each remaining feature; integration tests supplement unit coverage.
 - [x] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
   Hydration and RTK Query caching/mutations preserve counts, filtering, and
@@ -148,14 +148,25 @@ decisions for demonstrating the PDF's technologies.
   verification found six product article rows, all API titles and associated order
   titles outside scripts. Safari verified direct loading and navigation between
   Orders/Products; mutation/navigation combinations are covered by automated tests.
-- [ ] **Internationalization (i18n).** Provide Russian and Ukrainian translations
+- [x] **Internationalization (i18n).** Provide Russian and Ukrainian translations
   for navigation, inventory UI, forms, validation, connection/error/empty states,
   dates, prices, and accessible labels. Russian remains the default. Switching
   languages updates the HTML language and preserves the current application state.
-- [ ] **Web Storage.** Persist a non-sensitive preference, such as the selected
+  Typed dictionaries cover inventory, navigation, forms/validation, connection,
+  loading/error/empty states, accessible labels and page metadata. Dates/prices
+  use the selected locale. Stored inventory text retains its original language.
+  Tests verify HTML language, late streamed metadata, form drafts/errors, filters,
+  request/cache preservation, and socket/timer continuity. Safari verified RU/UK
+  switching, refresh/navigation titles, forms/errors, filtering, and the 320px UI.
+- [x] **Web Storage.** Persist a non-sensitive preference, such as the selected
   language or product type, across reloads. Restore it without hydration errors;
   missing, invalid, or unavailable storage must not break the application.
   Keep credentials and JWTs out of Web Storage.
+  `inventory.locale` persists `ru`/`uk` and synchronizes across tabs. Missing,
+  invalid, and inaccessible storage are tested; blocked writes retain in-memory
+  switching. Russian server/initial hydration snapshots prevent mismatches before
+  restoring the saved locale. Safari verified Ukrainian restoration after refresh.
+  All 92 web tests, lint, TypeScript, and production build pass.
 - [ ] **JWT authentication.** Add a small login/logout flow and protect inventory
   mutations on the server. Use hashed passwords and expiring, validated JWTs
   with an HttpOnly cookie and appropriate protection for cookie-authenticated

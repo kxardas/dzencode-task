@@ -1,3 +1,4 @@
+import { useLocale } from "@/i18n/locale-provider";
 import { Package } from "lucide-react";
 import type { OrderProduct } from "./types";
 
@@ -6,6 +7,7 @@ interface OrderProductRowProps {
 }
 
 export function OrderProductRow({ product }: OrderProductRowProps) {
+  const { t } = useLocale();
   return (
     <li className="order-product-row">
       <span className="order-product-row__photo" aria-hidden="true">
@@ -19,7 +21,7 @@ export function OrderProductRow({ product }: OrderProductRowProps) {
       </div>
 
       <span className="order-product-row__condition">
-        {product.isNew ? "Новый" : "Б/У"}
+        {product.isNew ? t("new") : t("usedCompact")}
       </span>
     </li>
   );

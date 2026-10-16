@@ -1,3 +1,5 @@
+import { useLocale } from "@/i18n/locale-provider";
+import type { MessageKey } from "@/i18n/messages";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useCreateProductMutation } from "@/store/api";
 import {
@@ -15,7 +17,7 @@ interface ProductCreateFormProps {
 
 interface FormField {
   name: Exclude<keyof ProductFormValues, "isNew" | "specification">;
-  label: string;
+  label: MessageKey;
   type: "text" | "date";
   maxLength?: number;
   inputMode?: "decimal";
@@ -23,19 +25,19 @@ interface FormField {
 }
 
 const fields: FormField[] = [
-  { name: "title", label: "Название продукта", type: "text", maxLength: 255 },
-  { name: "type", label: "Тип продукта", type: "text", maxLength: 100 },
+  { name: "title", label: "productTitle", type: "text", maxLength: 255 },
+  { name: "type", label: "productType", type: "text", maxLength: 100 },
   {
     name: "serialNumber",
-    label: "Серийный номер",
+    label: "serialNumber",
     type: "text",
     maxLength: 100,
   },
-  { name: "warrantyStart", label: "Начало гарантии", type: "date" },
-  { name: "warrantyEnd", label: "Конец гарантии", type: "date" },
+  { name: "warrantyStart", label: "warrantyStart", type: "date" },
+  { name: "warrantyEnd", label: "warrantyEnd", type: "date" },
   {
     name: "priceUSD",
-    label: "Цена, USD",
+    label: "priceUSD",
     type: "text",
     maxLength: 13,
     inputMode: "decimal",
@@ -43,7 +45,7 @@ const fields: FormField[] = [
   },
   {
     name: "priceUAH",
-    label: "Цена, UAH",
+    label: "priceUAH",
     type: "text",
     maxLength: 13,
     inputMode: "decimal",
@@ -56,6 +58,7 @@ export function ProductCreateForm({
   onCancel,
   onCreated,
 }: ProductCreateFormProps) {
+  const { t } = useLocale();
   const formRef = useRef<HTMLFormElement>(null);
   const submittingRef = useRef(false);
   const [errors, setErrors] = useState<ProductFormErrors>({});
@@ -102,55 +105,59 @@ export function ProductCreateForm({
       onSubmit={handleSubmit}
     >
       <h3 className="product-create-form__title" id={`${prefix}-heading`}>
-        Новый продукт
+        {t("newProduct")}
       </h3>
-      <p className="product-create-form__hint">
-        Все поля обязательны, кроме описания.
-      </p>
+      <p className="product-create-form__hint">{t("formHint")}</p>
       <fieldset className="product-create-form__fieldset" disabled={isLoading}>
-        <legend className="visually-hidden">Данные продукта</legend>
+        <legend className="visually-hidden">{t("productData")}</legend>
         <div className="product-create-form__grid">
-          {fields.map((field) => (
-            <div
-              key={field.name}
-              className={
-                field.name === "title" ? "product-create-form__wide" : undefined
-              }
-            >
-              <label className="form-label" htmlFor={`${prefix}-${field.name}`}>
-                {field.label}
-              </label>
-              <input
-                id={`${prefix}-${field.name}`}
-                name={field.name}
-                type={field.type}
-                className={`form-control${errors[field.name] ? " is-invalid" : ""}`}
-                required
-                maxLength={field.maxLength}
-                inputMode={field.inputMode}
-                placeholder={field.placeholder}
-                min={field.type === "date" ? "1000-01-01" : undefined}
-                max={field.type === "date" ? "9999-12-31" : undefined}
-                aria-invalid={Boolean(errors[field.name])}
-                aria-describedby={
-                  errors[field.name]
-                    ? `${prefix}-${field.name}-error`
+          {fields.map((field) => {
+            const error = errors[field.name];
+            return (
+              <div
+                key={field.name}
+                className={
+                  field.name === "title"
+                    ? "product-create-form__wide"
                     : undefined
                 }
-              />
-              {errors[field.name] && (
-                <span
-                  className="invalid-feedback d-block"
-                  id={`${prefix}-${field.name}-error`}
+              >
+                <label
+                  className="form-label"
+                  htmlFor={`${prefix}-${field.name}`}
                 >
-                  {errors[field.name]}
-                </span>
-              )}
-            </div>
-          ))}
+                  {t(field.label)}
+                </label>
+                <input
+                  id={`${prefix}-${field.name}`}
+                  name={field.name}
+                  type={field.type}
+                  className={`form-control${error ? " is-invalid" : ""}`}
+                  required
+                  maxLength={field.maxLength}
+                  inputMode={field.inputMode}
+                  placeholder={field.placeholder}
+                  min={field.type === "date" ? "1000-01-01" : undefined}
+                  max={field.type === "date" ? "9999-12-31" : undefined}
+                  aria-invalid={Boolean(error)}
+                  aria-describedby={
+                    error ? `${prefix}-${field.name}-error` : undefined
+                  }
+                />
+                {error && (
+                  <span
+                    className="invalid-feedback d-block"
+                    id={`${prefix}-${field.name}-error`}
+                  >
+                    {t(error.key, error.values)}
+                  </span>
+                )}
+              </div>
+            );
+          })}
           <div className="product-create-form__wide">
             <label className="form-label" htmlFor={`${prefix}-specification`}>
-              Описание
+              {t("specification")}
             </label>
             <textarea
               id={`${prefix}-specification`}
@@ -170,7 +177,7 @@ export function ProductCreateForm({
                 className="invalid-feedback d-block"
                 id={`${prefix}-specification-error`}
               >
-                {errors.specification}
+                {t(errors.specification.key, errors.specification.values)}
               </span>
             )}
           </div>
@@ -184,14 +191,12 @@ export function ProductCreateForm({
             defaultChecked
           />
           <label className="form-check-label" htmlFor={`${prefix}-isNew`}>
-            Новый продукт
+            {t("newProduct")}
           </label>
         </div>
         {isError && (
           <p className="product-create-form__error" role="alert">
-            {status === 404
-              ? "Приход больше недоступен. Закройте форму и обновите список приходов."
-              : "Не удалось сохранить продукт. Проверьте поля и попробуйте ещё раз."}
+            {status === 404 ? t("orderUnavailable") : t("saveError")}
           </p>
         )}
         <div className="product-create-form__actions">
@@ -200,10 +205,10 @@ export function ProductCreateForm({
             className="btn btn-outline-secondary"
             onClick={onCancel}
           >
-            Отмена
+            {t("cancel")}
           </button>
           <button type="submit" className="btn btn-success">
-            {isLoading ? "Сохранение…" : "Сохранить продукт"}
+            {isLoading ? t("saving") : t("saveProduct")}
           </button>
         </div>
       </fieldset>

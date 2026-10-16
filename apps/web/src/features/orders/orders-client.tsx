@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useStore } from "react-redux";
+import { usePageMetadata } from "@/i18n/page-metadata";
 import type { AppStore } from "@/store/store";
 import type { OrderSummary } from "./types";
 import { OrdersList } from "./orders-list";
@@ -13,6 +14,7 @@ export function OrdersClient({
 }: {
   initialOrders: OrderSummary[] | null;
 }) {
+  usePageMetadata("orders");
   const store = useAppStore();
   useState(() => {
     store.initializeOrders(initialOrders);

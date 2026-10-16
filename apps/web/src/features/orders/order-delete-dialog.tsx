@@ -1,3 +1,4 @@
+import { useLocale } from "@/i18n/locale-provider";
 import { Trash2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { useDeleteOrderMutation } from "@/store/api";
@@ -14,6 +15,7 @@ export function OrderDeleteDialog({
   onClose,
   onDeleted,
 }: OrderDeleteDialogProps) {
+  const { t } = useLocale();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
@@ -62,12 +64,12 @@ export function OrderDeleteDialog({
     >
       <div className="order-delete-dialog__body">
         <h2 className="order-delete-dialog__title" id="order-delete-title">
-          Удалить приход?
+          {t("deleteHeading")}
         </h2>
         <button
           type="button"
           className="order-delete-dialog__close"
-          aria-label="Закрыть подтверждение удаления"
+          aria-label={t("closeDelete")}
           disabled={isLoading}
           onClick={onClose}
         >
@@ -78,12 +80,11 @@ export function OrderDeleteDialog({
           className="order-delete-dialog__description"
           id="order-delete-description"
         >
-          Приход и все связанные с ним продукты будут удалены без возможности
-          восстановления.
+          {t("deleteExplanation")}
         </p>
         {isError && (
           <p className="order-delete-dialog__error" role="alert">
-            Не удалось удалить приход. Попробуйте ещё раз.
+            {t("deleteError")}
           </p>
         )}
       </div>
@@ -95,7 +96,7 @@ export function OrderDeleteDialog({
           disabled={isLoading}
           onClick={onClose}
         >
-          Отмена
+          {t("cancel")}
         </button>
         <button
           type="button"
@@ -111,7 +112,7 @@ export function OrderDeleteDialog({
           ) : (
             <Trash2 size={16} aria-hidden="true" />
           )}
-          {isLoading ? "Удаление…" : "Удалить"}
+          {isLoading ? t("deleting") : t("delete")}
         </button>
       </div>
     </dialog>
