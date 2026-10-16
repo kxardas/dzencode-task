@@ -12,9 +12,12 @@ decimal totals in USD/UAH. `GET /api/orders/:id` returns one order with its
 associated products. `DELETE /api/orders/:id` deletes the order and its
 products. Products list, type filtering, and detail endpoints are implemented.
 The frontend has a shared header/sidebar layout. Orders displays real data
-through RTK Query with loading, empty, error, and retry states. Products still
-shows a placeholder. Selecting an order opens a closable title panel.
-Fetching the panel's products, deletion UI, and the create-product form are planned.
+through RTK Query with loading, empty, error, and retry states. Products displays
+all inventory with type filtering, warranty dates, USD/UAH prices, and associated
+order titles. Selecting an order opens a closable panel with its products.
+Order deletion requires confirmation, handles pending/error states, updates the
+cached list, and closes the deleted order's panel. A validated create-product
+form is available within a selected order's panel.
 
 The frontend root redirects to `/orders`; `/products` is available through
 the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
@@ -107,14 +110,19 @@ Start the API and frontend in separate terminals:
 npm --prefix apps/api run start:dev
 ```
 
+The API watcher writes to `apps/api/build/`; production builds and HTTP tests
+use `apps/api/dist/`. A production build therefore does not clear the running
+dev server's compiled files.
+
 ```bash
 npm --prefix apps/web run dev
 ```
 
 Open http://localhost:3000 to view order summaries fetched from the API. Use the menu
 to switch to Products without a full-page reload. The shared layout adapts
-to mobile screens. The Products list, filtering, products within order panels,
-confirmation dialogs, clock, and session counter are planned.
+to mobile screens. Order panels show product titles, serial numbers, placeholder
+icons, and new/used condition. Products offers a type select with a reset option,
+loading/error handling, and empty results. The clock and session counter are planned.
 The API listens on http://localhost:3001 with the `/api` prefix. Open
 http://localhost:3001/api/orders to view order summaries. The bare `/api` path
 and other unimplemented routes return 404. CORS uses `FRONTEND_URL`.
@@ -166,9 +174,12 @@ orders and their products are preserved. A missing or already deleted order
 returns 404, and invalid IDs return 400. Database failures return a generic
 500 response without internal details.
 
-The frontend confirmation dialog is planned with the Orders page. It must
-explain that associated products will be deleted and send the DELETE request
-only after confirmation.
+The frontend dialog explains that associated products will be deleted and
+sends DELETE only after confirmation. Pending requests disable dismissal and
+duplicate submissions. Errors keep the dialog open for retry. On success,
+the deleted order and its products are removed from cached lists, affected order
+and product queries are invalidated, and its selected panel closes. Other selected
+orders remain open.
 
 ## Products API
 
@@ -193,7 +204,27 @@ and unsupported query parameters return 400. Invalid IDs return 400 and
 missing products return 404. Deleted orders' products disappear from these
 endpoints through the existing cascade policy.
 
-Creating products is planned with the validation form.
+`POST /api/products` creates a product for an existing order. Replace `orderId`
+below with an existing order ID:
+
+```bash
+curl -X POST http://localhost:3001/api/products \
+  -H 'Content-Type: application/json' \
+  -d '{"orderId":1,"title":"Office monitor","type":"Monitors","serialNumber":"MON-NEW","isNew":true,"warrantyStart":"2026-10-01","warrantyEnd":"2028-10-01","priceUSD":"149.95","priceUAH":"6150.25","specification":"Full HD"}'
+```
+
+Success returns 201 with `{ "data": ...product }`. Invalid fields, extra
+properties, reversed/invalid dates, negative prices, and prices outside
+`DECIMAL(12,2)` return 400. Money inputs must be decimal strings. Warranty
+inputs use `YYYY-MM-DD` and are stored at UTC midnight. A missing order returns
+404; unexpected database failures return a safe 500 response. Serial numbers
+are not unique. Full field constraints are documented in
+[data contracts](docs/data-contracts.md#product-creation-and-validation-form).
+
+In the browser, select an order and click "Добавить продукт". The form validates
+fields, preserves values after failure, blocks duplicate submissions while
+saving, and refreshes product lists, the order's products, count, and totals
+after success. Images remain placeholders; image upload is not implemented.
 
 ## Environment variables
 

@@ -1,4 +1,9 @@
+import { Plus, X } from "lucide-react";
+import { useState } from "react";
+import { ProductCreateForm } from "@/features/products/product-create-form";
+import { OrderProductRow } from "./order-product-row";
 import type { OrderSummary } from "./types";
+import { useGetOrderQuery } from "@/store/api";
 
 interface OrderDetailsPanelProps {
   order: OrderSummary;
@@ -6,16 +11,89 @@ interface OrderDetailsPanelProps {
 }
 
 export function OrderDetailsPanel({ order, onClose }: OrderDetailsPanelProps) {
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [wasCreated, setWasCreated] = useState(false);
+  const {
+    currentData: details,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetOrderQuery(order.id);
+
   return (
-    <aside className="order-details-panel">
-      <h2>{order.title}</h2>
-      <button
-        type="button"
-        onClick={onClose}
-        className="btn btn-outline-secondary btn-sm"
-      >
-        Закрыть
-      </button>
+    <aside
+      className="order-details-panel"
+      aria-labelledby="order-details-title"
+    >
+      <div className="order-details-panel__header">
+        <h2 className="order-details-panel__title" id="order-details-title">
+          {order.title}
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="order-details-panel__close"
+          aria-label="Закрыть детали прихода"
+        >
+          <X size={18} strokeWidth={2} aria-hidden="true" />
+        </button>
+      </div>
+
+      {showCreateForm ? (
+        <ProductCreateForm
+          orderId={order.id}
+          onCancel={() => setShowCreateForm(false)}
+          onCreated={() => {
+            setShowCreateForm(false);
+            setWasCreated(true);
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className="order-details-panel__add btn"
+          disabled={!details}
+          onClick={() => {
+            setWasCreated(false);
+            setShowCreateForm(true);
+          }}
+        >
+          <Plus size={16} aria-hidden="true" />
+          Добавить продукт
+        </button>
+      )}
+      {wasCreated && (
+        <p className="order-details-panel__success" role="status">
+          Продукт добавлен.
+        </p>
+      )}
+
+      {isFetching && !details && <p role="status">Загрузка продуктов…</p>}
+
+      {isError && (
+        <div role="alert">
+          <p>Не удалось загрузить продукты.</p>
+          <button
+            type="button"
+            className="btn btn-outline-secondary btn-sm"
+            disabled={isFetching}
+            onClick={() => refetch()}
+          >
+            {isFetching ? "Повторная загрузка…" : "Повторить"}
+          </button>
+        </div>
+      )}
+
+      {details &&
+        (details.products.length === 0 ? (
+          <p>В этом приходе пока нет продуктов.</p>
+        ) : (
+          <ul className="order-details-panel__products">
+            {details.products.map((product) => (
+              <OrderProductRow key={product.id} product={product} />
+            ))}
+          </ul>
+        ))}
     </aside>
   );
 }

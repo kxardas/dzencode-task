@@ -2,8 +2,8 @@
 
 The source example is `task/app.js`. The Prisma schema and initial migration
 implement the storage decisions below. Orders list/detail/deletion and
-Products list/detail/type filtering are implemented. Product creation and
-forms are planned; the POST row below describes an intended contract.
+Products list/detail/type filtering and creation are implemented, including
+a create-product form within a selected order's panel.
 
 ## Mapping from the assignment example
 
@@ -44,7 +44,7 @@ Successful JSON responses use a `{ "data": ... }` envelope. IDs are numbers,
 after the decimal point, including totals. Use Prisma Decimal's `toFixed(2)`
 when building response DTOs; do not rely on its default JSON representation.
 
-| Endpoint | Intended response |
+| Endpoint | Response |
 | --- | --- |
 | `GET /api/orders` | Order summaries: `id`, `title`, `description`, `createdAt`, `productCount`, `totalUSD`, `totalUAH` |
 | `GET /api/orders/:id` | The summary plus its `products` array |
@@ -91,19 +91,42 @@ An empty order has `productCount: 0` and totals of `"0.00"`; empty collections
 return `data: []`. Missing resources return 404, invalid IDs/inputs return 400,
 and server errors must not expose credentials or internal database details.
 
-## Planned validation form
+## Product creation and validation form
 
-Use one small create-product form associated with a selected existing order.
-Require a title, type, serial number, valid warranty dates, and both prices.
-Support `isNew`, specification, and an optional image URL; use an empty
-specification when omitted. `createdAt` is assigned by the server.
+`POST /api/products` accepts a JSON object and returns the created product
+in `{ "data": ... }` with status 201, using the same serialization as GET.
+The form opens through "Добавить продукт" in a selected order's panel.
+Its required fields are title, type, serial number, warranty dates, and both
+prices. The order ID comes from the selected order. The form also supports
+new/used condition and an optional specification; photos remain placeholders.
 
-Validate required/trimmed strings and storage lengths, positive order IDs,
-the referenced order's existence, actual dates and warranty ordering,
-nonnegative prices, a maximum of two fractional digits, and the storage range
-of `DECIMAL(12,2)`. Repeat relevant validation on frontend and backend.
+Input constraints:
+
+- `orderId`: JSON integer from 1 to 4294967295 referring to an existing order.
+- Trimmed nonempty `title` (255 characters), `type` and `serialNumber` (100 each).
+- `warrantyStart` and `warrantyEnd`: real `YYYY-MM-DD` dates from 1000 to 9999,
+  stored at UTC midnight. End must be on or after start.
+- `priceUSD` and `priceUAH`: nonnegative decimal strings with one to ten integer
+  digits and at most two fractional digits; maximum `9999999999.99`. Numeric
+  JSON prices, exponent notation, and rounding of extra digits are not accepted.
+  The form accepts comma decimal separators and normalizes them before sending.
+- Optional `isNew` is a JSON boolean and defaults to true.
+- Optional `specification` is trimmed, limited to 10000 characters, and defaults
+  to an empty string. This is an application limit within the MySQL TEXT capacity.
+- The API additionally accepts an optional HTTP(S) image URL in `photo` (2048
+  characters, no URL credentials); blank/null/omitted values become null. The
+  current form does not expose this field or implement image uploads.
+- IDs and `createdAt` are assigned by the server; unknown properties are rejected.
+
+Invalid input returns 400. A foreign-key failure for an order removed before
+creation returns 404; unexpected database failures produce a generic 500.
+Serial numbers remain non-unique. Relevant validation runs on frontend and
+backend. Pending submissions disable form controls and duplicate submission;
+failed saves preserve entered values. Success closes the form, shows a success
+message, and invalidates order summaries, selected details, and product lists
+so counts, exact totals, product types, and inventory are fetched again.
 No additional edit forms, order-creation flow, or authentication is planned
-as part of this database stage.
+as part of this form feature.
 
 ## Development seed and schema artifact
 
