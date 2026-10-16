@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import type { PrismaService } from '../prisma/prisma.service.js';
 import { ProductsService } from './products.service.js';
@@ -6,14 +6,16 @@ import { ProductsService } from './products.service.js';
 describe('ProductsService', () => {
   const findMany = vi.fn();
   const findUnique = vi.fn();
+  const create = vi.fn();
   const prisma = {
-    product: { findMany, findUnique },
+    product: { findMany, findUnique, create },
   } as unknown as PrismaService;
   const service = new ProductsService(prisma);
 
   beforeEach(() => {
     findMany.mockReset();
     findUnique.mockReset();
+    create.mockReset();
   });
 
   it('returns an empty collection when there are no matching products', async () => {
@@ -57,6 +59,60 @@ describe('ProductsService', () => {
     await expect(service.findOne(123)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  const input = {
+    orderId: 5,
+    title: 'Test monitor',
+    type: 'Monitors',
+    serialNumber: '0001',
+    warrantyStart: '2026-10-01',
+    warrantyEnd: '2028-10-01',
+    priceUSD: '0.10',
+    priceUAH: '4.10',
+  };
+
+  it('creates a product with exact prices, UTC dates, and sensible optional defaults', async () => {
+    create.mockImplementationOnce(async ({ data }) => ({
+      ...data,
+      id: 123,
+      createdAt: new Date('2026-10-16T12:00:00.000Z'),
+      order: { id: input.orderId, title: 'Office delivery' },
+    }));
+    await expect(service.create(input)).resolves.toMatchObject({
+      ...input,
+      id: 123,
+      isNew: true,
+      specification: '',
+      photo: null,
+      warrantyStart: '2026-10-01T00:00:00.000Z',
+      warrantyEnd: '2028-10-01T00:00:00.000Z',
+      priceUSD: '0.10',
+      priceUAH: '4.10',
+      order: { id: input.orderId, title: 'Office delivery' },
+    });
+  });
+
+  it('rejects reversed warranty dates before writing to the database', async () => {
+    await expect(
+      service.create({ ...input, warrantyEnd: '2025-01-01' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('maps a missing parent order to 404 and preserves unrelated database errors', async () => {
+    create.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Missing parent', {
+        code: 'P2003',
+        clientVersion: '7.10.0',
+      }),
+    );
+    await expect(service.create(input)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    const error = new Error('Database unavailable');
+    create.mockRejectedValueOnce(error);
+    await expect(service.create(input)).rejects.toBe(error);
   });
 
   it('propagates database failures instead of returning empty or missing results', async () => {

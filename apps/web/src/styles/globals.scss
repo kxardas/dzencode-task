@@ -1,5 +1,6 @@
 @use "layout";
 @use "orders";
+@use "products";
 
 :root {
   --inventory-accent: #81b843;
@@ -120,6 +121,16 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slidein {
+  from {
+    right: -50px;
+  }
+
+  to {
+    right: 0;
   }
 }
 

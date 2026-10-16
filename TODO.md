@@ -17,6 +17,9 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   installation, startup, environment examples, and current limitations.
   Node.js/npm versions are pinned; lockfile installation, lint, build, and
   production startup have been verified for both application skeletons.
+  API watch/debug output is isolated in `build/` from production/test `dist/`.
+  Watch startup, a concurrent production build, subsequent automatic restart,
+  and real GET /api/products responses were verified after fixing their output conflict.
 - [x] **Define data and API contracts.** Map `task/app.js` fields to typed
   entities and responses. Document currency defaults, date/time handling,
   money serialization, deletion behavior, and the small form's scope.
@@ -44,21 +47,47 @@ Keep commits small and meaningful; commit/push only when explicitly requested.
   Web lint, TypeScript, build, and desktop/mobile browser review pass.
   Redux/RTK Query is connected without duplicated server data. Orders renders
   real API data with loading, error/retry, empty, and background-refresh states.
-  Six frontend tests cover these behaviors, cache reuse, and selection/panel closing.
+  Forty-five frontend tests cover these behaviors, cache reuse, selection/panel
+  closing, deletion, product retrieval/filtering, and the validated create form.
 - [ ] **Build the Orders page.** Show names, counts, dates in two formats,
   and totals in both currencies. Selection opens a closable side panel;
   cancellation preserves data, confirmed deletion updates affected caches,
   and deleting the selected order leaves no stale panel.
   The API-backed summary list, counts, both date formats, and both currency
-  totals are implemented. Selection, row highlighting, and a closable title
-  panel are implemented with desktop/mobile layouts. Fetching/displaying the
-  panel's products and deletion UI remain.
+  totals are implemented. Selection through titles/icons, row highlighting,
+  and a closable panel showing associated product titles are verified.
+  The panel opens/closes immediately and stacks below the list on narrower
+  screens. Product rows show placeholder icons, titles, serial numbers, and
+  new/used condition. The header has a labeled close-icon button with hover
+  and keyboard-focus styles; desktop closing is verified. Row delete buttons
+  open a native modal with the order title and cascading-deletion explanation.
+  Confirmed deletion uses RTK Query, removes the deleted order from the
+  cached list, and invalidates affected order queries. Pending requests block
+  duplicate submission and dismissal. Errors preserve data and allow retry;
+  success closes the deleted order's panel while preserving other selections.
+  Automated coverage includes populated/empty/last-order deletion, HTTP/network
+  failures, retry, and failed list refresh after deletion. Browser review remains
+  pending because the Safari automation connection was unavailable.
+  Order row data and its delete action now use separate layout columns; removed
+  the compact delete button's absolute positioning and excess reserved space.
+  Browser review of the layout correction remains pending for the same reason.
 - [ ] **Build the Products page.** Display all required fields and associated
   order titles. One type select filters products; resetting restores all
   products and empty results show a clear message.
+  API-backed rows, both price currencies, UTC warranty dates in two formats,
+  associated order titles, server-side type filtering/reset, and loading/error/
+  empty states are implemented and covered by eight product tests. Type options
+  remain available while filtering. Order deletion updates all cached product
+  lists, including filtered lists, even if refresh fails. Browser review remains.
 - [ ] **Demonstrate form validation.** Implement the agreed small inventory
   form and its API endpoint. Frontend and backend reject invalid input,
   errors remain understandable, and successful submission refreshes data.
+  POST /api/products and an inline form in the selected order panel are
+  implemented. Both layers validate strings, dates/order, and decimal prices.
+  Pending controls, cancellation, failures/retry, successful persistence, and
+  refreshing products/counts/totals are covered. API checks pass: 23 unit and
+  20 database/HTTP tests; web checks pass: 45 tests. Browser review remains
+  pending because native browser automation is unavailable.
 - [ ] **Implement the clock and active-session counter.** Time updates
   automatically. Socket.io counts connected tabs on the server and broadcasts
   changes; opening, closing, refreshing, and reconnecting tabs work without

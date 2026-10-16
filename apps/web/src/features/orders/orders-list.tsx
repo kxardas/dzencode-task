@@ -6,9 +6,11 @@ import { useGetOrdersQuery } from "@/store/api";
 import { OrderRow } from "./order-row";
 import { useState } from "react";
 import { OrderDetailsPanel } from "./order-details-panel";
+import { OrderDeleteDialog } from "./order-delete-dialog";
 
 export function OrdersList() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const {
     data: orders,
@@ -19,6 +21,9 @@ export function OrdersList() {
   } = useGetOrdersQuery(undefined, { refetchOnMountOrArgChange: 30 });
 
   const selectedOrder = orders?.find((order) => order.id === selectedOrderId);
+  const pendingDeleteOrder = orders?.find(
+    (order) => order.id === pendingDeleteId,
+  );
 
   return (
     <section className="inventory-page" aria-labelledby="orders-title">
@@ -83,6 +88,7 @@ export function OrdersList() {
                     key={order.id}
                     order={order}
                     onSelect={setSelectedOrderId}
+                    onDelete={setPendingDeleteId}
                     isSelected={selectedOrderId === order.id}
                   />
                 ))}
@@ -92,11 +98,24 @@ export function OrdersList() {
         )}
         {selectedOrder && (
           <OrderDetailsPanel
+            key={selectedOrder.id}
             order={selectedOrder}
             onClose={() => setSelectedOrderId(null)}
           />
         )}
       </div>
+      {pendingDeleteOrder && (
+        <OrderDeleteDialog
+          order={pendingDeleteOrder}
+          onClose={() => setPendingDeleteId(null)}
+          onDeleted={(id) => {
+            setPendingDeleteId(null);
+            setSelectedOrderId((selectedId) =>
+              selectedId === id ? null : selectedId,
+            );
+          }}
+        />
+      )}
     </section>
   );
 }
