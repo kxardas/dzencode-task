@@ -21,7 +21,7 @@ with `{ data: product }`. DTO validation trims strings and checks field lengths,
 real warranty dates, decimal-string prices, boolean values, and unknown fields.
 The service checks warranty ordering and maps a missing parent order to 404.
 Dates are stored at UTC midnight; monetary inputs remain exact decimals.
-See the [creation contract](../../docs/data-contracts.md#product-creation-and-validation-form).
+See the [Products API](../../README.md#products-api) for input constraints.
 
 Follow the [root setup guide](../../README.md) to start MySQL and configure
 `apps/api/.env`. The commands below run inside `apps/api`.
@@ -111,9 +111,9 @@ and Secure in production. Logout clears the browser cookie. JWTs remain valid
 until expiry, including across API restarts; there is no server session registry.
 There is no registration, login limiter, or refresh-token flow.
 
-See [authentication and evaluator access](../../docs/authentication.md) for the
+See [authentication and evaluator access](../../README.md#authentication-and-evaluator-access) for the
 request contract, password hashing, environment, and deployment constraints.
 Auth tests exercise valid/invalid login, cookie flags, actual expiry, protected
 writes, trusted write headers, cookie clearing, and stateless restart behavior.
 
-See [data decisions and planned contracts](../../docs/data-contracts.md).
+The storage model is in `prisma/schema.prisma`; API contracts are in the root README.

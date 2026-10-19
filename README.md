@@ -28,9 +28,9 @@ The frontend root redirects to `/orders`; `/products` is available through
 the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
 on startup. Open `/api/orders` for JSON data; the bare `/api` path returns 404.
 
-See [TODO.md](TODO.md) for progress and
-[data decisions and planned contracts](docs/data-contracts.md) for the model,
-currencies, UTC dates, deletion policy, and intended API responses.
+See [TODO.md](TODO.md) for progress. The API sections below document dates,
+currencies, validation, and cascading deletion; the storage model is in
+`apps/api/prisma/schema.prisma`.
 
 ## Technology stack
 
@@ -58,7 +58,6 @@ apps/
     test/               Database integration tests
     prisma.config.ts    CLI connection and migration configuration
 database/              MySQL image setup and Workbench schema.sql
-docs/                  Data decisions and planned API contracts
 task/                  Original assignment, example data, and UI references
 TODO.md                Development and delivery checklist
 .nvmrc                 Pinned Node.js version
@@ -187,7 +186,7 @@ A missing order returns 404. The ID must be an integer between 1 and
 
 `DELETE /api/orders/:id` removes an order and all its associated products.
 This write requires an authenticated cookie and trusted Origin/custom header;
-see [authentication and evaluator access](docs/authentication.md).
+see [authentication and evaluator access](#authentication-and-evaluator-access).
 Successful deletion returns `204 No Content` with no response body. Other
 orders and their products are preserved. A missing or already deleted order
 returns 404, and invalid IDs return 400. Database failures return a generic
@@ -225,7 +224,7 @@ endpoints through the existing cascade policy.
 
 `POST /api/products` creates a product for an existing order. Replace `orderId`
 below with an existing order ID. This write also requires an authenticated cookie
-and trusted Origin/custom header; see [authentication](docs/authentication.md).
+and trusted Origin/custom header; see [authentication](#authentication-and-evaluator-access).
 
 ```bash
 curl -X POST http://localhost:3001/api/products \
@@ -238,8 +237,10 @@ properties, reversed/invalid dates, negative prices, and prices outside
 `DECIMAL(12,2)` return 400. Money inputs must be decimal strings. Warranty
 inputs use `YYYY-MM-DD` and are stored at UTC midnight. A missing order returns
 404; unexpected database failures return a safe 500 response. Serial numbers
-are not unique. Full field constraints are documented in
-[data contracts](docs/data-contracts.md#product-creation-and-validation-form).
+are not unique. Titles are limited to 255 characters; type and serial number
+to 100 each. Specification is optional, at most 10000 characters. Optional
+`isNew` defaults to true; optional `photo` accepts an HTTP(S) URL up to 2048
+characters or null. Unknown properties are rejected.
 
 In the browser, select an order and click "Добавить продукт". The form validates
 fields, preserves values after failure, blocks duplicate submissions while
@@ -305,8 +306,23 @@ The API stores a salted scrypt password hash in its ignored `.env`.
 Login issues a fifteen-minute HttpOnly JWT cookie. Logout clears the browser
 cookie; the stateless API does not revoke copied tokens before expiry. Inventory
 reads remain public. Changes require authentication and CSRF-protected writes;
-tokens and credentials are not saved in Web Storage. See the complete
-[auth contract, configuration, tests, and deployment constraints](docs/authentication.md).
+tokens and credentials are not saved in Web Storage.
+
+`POST /api/auth/login` accepts `{ "username": "...", "password": "..." }`
+and returns `{ "data": { "user": { "username": "..." } } }` with the cookie.
+`GET /api/auth/session` returns that public user summary or `user: null`.
+`POST /api/auth/logout` clears the cookie and returns 204. Auth responses use
+`Cache-Control: no-store`. Wrong credentials return a generic 401.
+
+Writes require `Origin` matching `FRONTEND_URL` exactly and
+`X-Inventory-Request: 1`. Browser fetches use `credentials: "include"`.
+The cookie is host-only, HttpOnly, SameSite=Lax, Path=/api, and Secure in
+production. JWTs expire after fifteen minutes; there is no session registry,
+login limiter, or refresh-token flow. API restarts do not invalidate tokens.
+
+Production requires HTTPS and same-site web/API hosting, preferably a reverse
+proxy with `/api` on the frontend origin. Configure private production secrets
+and provide evaluator access privately. Never publish the local access file.
 
 ## Environment variables
 
@@ -340,8 +356,11 @@ Changing `MYSQL_PORT` also requires updating both API connection URLs.
 The development image initializes `${MYSQL_DATABASE}_shadow` with scoped user
 privileges on first startup. Never use the application database as the shadow
 because Prisma Migrate recreates its schema. Initialization only runs on an
-empty volume; details for an existing development volume are in
-[connection configuration](docs/data-contracts.md#connection-configuration).
+empty volume. To initialize the shadow database on an existing local volume:
+
+```bash
+docker compose exec -T mysql sh /docker-entrypoint-initdb.d/init-shadow.sh
+```
 
 ## Database workflow
 

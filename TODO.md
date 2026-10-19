@@ -99,7 +99,6 @@ All nine Junior+ competencies below are included in the delivery scope.
   creation. The order panel, count, USD/UAH totals, product list, type options,
   associations, and warranty dates updated correctly. The temporary QA order and
   product were then deleted; all original records matched the pre-check baseline.
-  See [browser verification](docs/browser-verification.md) for the checked workflow.
 - [x] **Implement the clock and active-session counter.** Time updates
   automatically. Socket.io counts connected tabs on the server and broadcasts
   changes; opening, closing, refreshing, and reconnecting tabs work without
@@ -187,7 +186,7 @@ decisions for demonstrating the PDF's technologies.
   a copied JWT remains valid until expiry, including across API restarts.
   Frontend auth uses standard RTK Query Session tags, without custom cancellation,
   polling, or manual cache writes. The login form uses local React state.
-  See [authentication and evaluator access](docs/authentication.md) for the flow,
+  See [authentication and evaluator access](README.md#authentication-and-evaluator-access) for the flow,
   deliberate limits, and production HTTPS/same-site deployment requirements.
   Automated checks cover valid/invalid login, protected writes, expiry, JWT
   validation, cookie clearing, trusted headers, and session cache refresh.

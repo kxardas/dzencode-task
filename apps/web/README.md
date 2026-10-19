@@ -161,7 +161,7 @@ RTK Query refreshes the summary. Focus/reconnect also refresh queries. There is
 no polling, manual cache update, or request cancellation for authentication.
 Failed writes preserve inventory/drafts; failed logout offers retry.
 
-See [evaluator setup and API contract](../../docs/authentication.md). SSR inventory
+See [evaluator setup and API contract](../../README.md#authentication-and-evaluator-access). SSR inventory
 reads remain public and do not forward authentication cookies to the API.
 
 ## Checks
@@ -173,7 +173,7 @@ npm run build
 ```
 
 Vitest, React Testing Library, and jsdom exercise real RTK Query requests with
-mocked fetch responses. One hundred three tests cover loading/data formatting, empty
+mocked fetch responses. The frontend tests cover loading/data formatting, empty
 collections, safe errors and retry, cache reuse, failed background refresh,
 order selection, switching, panel closing, and deletion confirmation/cancellation.
 Deletion coverage includes pending-state controls, duplicate submissions,
@@ -198,8 +198,6 @@ elements, outside serialized script data. Safari review verified desktop and
 320px layouts, route navigation, product filtering/reset/empty results, dialog
 cancellation and confirmed deletion, empty form validation and successful creation,
 and the active-tab sequence 1 → 2 → 2 after refresh → 1 on close.
-The [browser workflow report](../../docs/browser-verification.md) records the
-temporary fixture, resulting totals, navigation checks, and database comparison.
 The Vitest tests do not require the API or MySQL; the browser workflow uses both.
 Localization tests additionally cover defaults, invalid/blocked storage,
 persistence, cross-tab changes and cleanup, hydration with a saved Ukrainian
