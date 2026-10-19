@@ -7,6 +7,7 @@ import { useState } from "react";
 import { PagePlaceholder } from "@/components/ui/page-placeholder";
 import { useGetProductsQuery } from "@/store/api";
 import { ProductRow } from "./product-row";
+import { ProductStatistics } from "./product-statistics";
 
 export function ProductsList() {
   const { locale, t } = useLocale();
@@ -59,6 +60,12 @@ export function ProductsList() {
           ))}
         </select>
       </div>
+
+      <ProductStatistics
+        products={allProductsQuery.data}
+        isFetching={allProductsQuery.isFetching}
+        isError={allProductsQuery.isError}
+      />
 
       {isFetching && products === undefined && (
         <div className="products-state" role="status">

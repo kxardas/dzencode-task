@@ -69,6 +69,15 @@ const ru = {
   used: "Б/у",
   usedCompact: "Б/У",
   productsDescription: "Оборудование из всех приходов в одном месте.",
+  inventoryStatistics: "Статистика инвентаря",
+  statisticsScope:
+    "Все продукты из всех приходов. Фильтр списка не влияет на график.",
+  productsByType: "Продукты по типам",
+  statisticsTotal: "Всего продуктов: {count}",
+  statisticsEmpty: "Добавьте продукты, чтобы увидеть статистику.",
+  statisticsError:
+    "Не удалось обновить статистику. Повторите загрузку продуктов.",
+  loadingChart: "Загрузка графика…",
   productType: "Тип продукта",
   allTypes: "Все типы",
   productsError: "Не удалось загрузить продукты. Попробуйте ещё раз.",
@@ -180,6 +189,15 @@ export const messages = {
     used: "Вживаний",
     usedCompact: "Вживаний",
     productsDescription: "Обладнання з усіх надходжень в одному місці.",
+    inventoryStatistics: "Статистика інвентарю",
+    statisticsScope:
+      "Усі продукти з усіх надходжень. Фільтр списку не впливає на графік.",
+    productsByType: "Продукти за типами",
+    statisticsTotal: "Усього продуктів: {count}",
+    statisticsEmpty: "Додайте продукти, щоб побачити статистику.",
+    statisticsError:
+      "Не вдалося оновити статистику. Повторіть завантаження продуктів.",
+    loadingChart: "Завантаження графіка…",
     productType: "Тип продукту",
     allTypes: "Усі типи",
     productsError: "Не вдалося завантажити продукти. Спробуйте ще раз.",

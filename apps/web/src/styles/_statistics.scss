@@ -1,0 +1,136 @@
+.product-statistics {
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 1px solid var(--inventory-border);
+  border-radius: 8px;
+  background: #fff;
+
+  &__toggle {
+    display: flex;
+    width: 100%;
+    padding: 16px 20px;
+    gap: 10px;
+    align-items: center;
+    border: 0;
+    color: var(--inventory-text);
+    background: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+
+    svg {
+      flex-shrink: 0;
+      color: var(--inventory-accent-dark);
+    }
+
+    svg:last-child {
+      margin-left: auto;
+    }
+
+    &[aria-expanded="true"] svg:last-child {
+      transform: rotate(180deg);
+    }
+
+    &:hover {
+      background: var(--inventory-accent-soft);
+    }
+
+    &:focus-visible {
+      outline-offset: -4px;
+    }
+  }
+
+  &__content {
+    padding: 0 20px 20px;
+  }
+
+  &__hint {
+    color: var(--inventory-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  &__error {
+    color: #843737;
+  }
+}
+
+.product-type-chart {
+  margin: 0;
+
+  &__title {
+    font-size: 18px;
+    font-weight: 700;
+  }
+
+  &__total {
+    margin: 8px 0 20px;
+    color: var(--inventory-muted);
+    font-size: 13px;
+  }
+
+  &__rows {
+    display: grid;
+    margin: 0;
+    gap: 16px;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) minmax(0, 3fr);
+    gap: 16px;
+    align-items: center;
+    font-size: 14px;
+  }
+
+  &__label {
+    font-weight: 400;
+    overflow-wrap: anywhere;
+  }
+
+  &__value {
+    display: flex;
+    margin: 0;
+    gap: 12px;
+    align-items: center;
+  }
+
+  &__track {
+    display: block;
+    height: 14px;
+    flex: 1;
+    overflow: hidden;
+    border-radius: 4px;
+    background: var(--inventory-accent-soft);
+  }
+
+  &__bar {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--inventory-accent-dark);
+  }
+
+  &__count {
+    min-width: 3ch;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .product-statistics {
+    &__toggle {
+      padding: 16px;
+    }
+
+    &__content {
+      padding: 0 16px 16px;
+    }
+  }
+
+  .product-type-chart__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

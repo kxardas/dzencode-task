@@ -126,7 +126,7 @@ decisions for demonstrating the PDF's technologies.
   these guarantees while adding the remaining features.
 - [x] **Unit tests.** Vitest and React Testing Library cover inventory behavior,
   validation, errors, clock updates, and session counting. The verified suite
-  includes 101 frontend tests and 28 backend unit tests. Add behavioral tests
+  includes 106 frontend tests and 28 backend unit tests. Add behavioral tests
   alongside each remaining feature; integration tests supplement unit coverage.
 - [x] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
   Hydration and RTK Query caching/mutations preserve counts, filtering, and
@@ -195,18 +195,40 @@ decisions for demonstrating the PDF's technologies.
   also passed an HTTP check without inventory changes.
   Safari previously checked the full login/refresh/logout workflow and mobile UI;
   deployment verification remains a release task.
-- [ ] **Charts.** Show a chart of product counts by type using actual inventory
+- [x] **Charts.** Show a chart of product counts by type using actual inventory
   data. Creation/deletion updates the figures; empty/error states and an
   accessible textual equivalent are available. Verify the values against the API.
+  Products has an expandable inventory statistics panel with a horizontal bar
+  chart and readable type/count pairs. It uses the existing unfiltered RTK Query
+  data; filtering the list does not change inventory-wide counts. Categories are
+  sorted by count, with locale-aware names as the tie-breaker. Labels support
+  RU/UK; stored type names remain unchanged. HTML/SCSS bars keep the implementation
+  small without another dependency. Five behavioral tests cover aggregation,
+  opening/closing, filtering, locales, empty/error/retry states, creation,
+  cascading deletion, and a failed refresh after deletion. All 106 web tests,
+  lint, TypeScript, and production build pass. Chrome desktop and 320×740 review
+  verified readable bars/counts, long labels, RU/UK switching, opening/closing,
+  and Orders/Products navigation. Current inventory has 24 products across nine
+  types; filtering the list to four monitors leaves the chart total at 24.
+  Browser checks only read inventory and change local UI preferences.
 - [ ] **Maps.** Display an office location on an interactive map with a marker
   and a readable address. Use configurable, clearly identified demo coordinates;
   provide an accessible address fallback and handle map-loading failures.
   Document external map/tile requirements and attribution; do not add delivery
   tracking or require browser geolocation.
-- [ ] **Lazy loading.** Defer a meaningful noncritical feature, such as the chart
+- [x] **Lazy loading.** Defer a meaningful noncritical feature, such as the chart
   or office map. Show a loading state and verify its code loads on demand and
   still works after client-side navigation. Confirm actual bundle/network
   behavior rather than counting ordinary route splitting as sufficient evidence.
+  The chart uses React.lazy/Suspense and mounts only when statistics are opened.
+  Production inspection/HTTP verified a separate chart JS chunk absent from the
+  initial Products scripts/preloads and their contents. Inventory SSR remains
+  intact. Chrome Network on the production build confirmed no chart request
+  before opening statistics and one successful JS request afterwards. The
+  loading placeholder was observed; navigation away/back and reopening work.
+  Network checks used a temporary production server; UI/filter checks used
+  the configured localhost:3000 origin. Browser throttling/cache overrides
+  were restored after review.
 
 ## Release and delivery
 

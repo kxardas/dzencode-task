@@ -146,6 +146,31 @@ Each consumer uses its own server snapshot so a Suspense subtree that hydrates
 later does not mismatch after the surrounding UI has already restored Ukrainian.
 The store shares one browser storage-event listener across its subscribers.
 
+## Inventory statistics
+
+The Products page has an expandable statistics panel. `ProductStatistics` keeps
+only its open/closed state; `ProductTypeChart` counts the unfiltered products
+already available in RTK Query. Filtering the list does not change chart totals.
+Creating products or deleting orders updates that shared data and the chart.
+The chart uses simple HTML/SCSS bars, with visible type/count pairs readable by
+assistive technology. It has RU/UK labels and empty/loading/error feedback;
+cached figures remain visible if a background refresh fails.
+
+`React.lazy` and `Suspense` load the chart module when the panel is first opened.
+Production checks verified a separate JS chunk absent from initial scripts and
+preloads; the ordinary product rows still server-render. Chrome Network on a
+temporary production server confirmed no chart request before opening statistics
+and a successful JS request afterwards. Chrome desktop/320×740 review verified
+the loading placeholder, readable bars/counts, long category labels, RU/UK,
+opening/closing, filtering independence, and Orders/Products navigation.
+The current local fixture has 24 products across nine types; selecting four
+monitors keeps the inventory-wide chart total at 24. Interactive checks used
+the API's configured localhost:3000 origin; no inventory records were changed.
+
+Five statistics tests cover counts, filter independence, localization,
+empty/error/retry states, creation, cascading deletion, and failed refresh.
+The current frontend suite contains 106 passing tests.
+
 ## Authentication
 
 `/login` provides a localized evaluator login form; header controls restore the

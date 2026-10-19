@@ -21,6 +21,8 @@ cached list, and closes the deleted order's panel. A validated create-product
 form is available within a selected order's panel. The shared header displays
 the browser's local date/time and a server-maintained active-tab counter.
 The header offers Russian/Ukrainian UI languages and remembers the choice locally.
+Products includes expandable statistics with product counts by type, using the
+same inventory cache. Its chart component loads on demand when opened.
 JWT login/logout is implemented: viewing inventory is public; adding products
 and deleting orders require the evaluator session.
 
