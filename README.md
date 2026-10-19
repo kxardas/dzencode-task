@@ -23,6 +23,8 @@ the browser's local date/time and a server-maintained active-tab counter.
 The header offers Russian/Ukrainian UI languages and remembers the choice locally.
 Products includes expandable statistics with product counts by type, using the
 same inventory cache. Its chart component loads on demand when opened.
+An expandable demo office map below the page content loads on demand, with
+a marker, localized address, and an external map link available if loading fails.
 JWT login/logout is implemented: viewing inventory is public; adding products
 and deleting orders require the evaluator session.
 
@@ -39,6 +41,7 @@ currencies, validation, and cascading deletion; the storage model is in
 - **Frontend:** Next.js App Router, React, TypeScript, Redux Toolkit/RTK Query.
   Socket.io Client receives live session counts. Bootstrap 5,
   SCSS with BEM, and Lucide React are used by the shared frontend layout.
+  React Leaflet displays the demo office map using OpenStreetMap tiles.
 - **Backend:** NestJS with ESM and TypeScript, Prisma 7.10.0 and its MySQL driver
   adapter, DTO validation, and a Socket.io gateway for active sessions.
 - **Database:** MySQL 8.4.11, Prisma migrations, and decimal monetary columns.
@@ -438,6 +441,27 @@ npm --prefix apps/api run start:prod
 npm --prefix apps/web run start
 ```
 
+## Demo office map
+
+The shared office section explicitly identifies its location as demo data,
+not the company's address. It uses the real Gulliver business centre in Kyiv,
+Sportyvna Square, 1-A (50.4387, 30.5232). The address is listed on the
+[business centre's website](https://gullivercenter.com/bc-gallery/pervaya-galereya-bc).
+Change coordinates, zoom, and both translated addresses together in
+`apps/web/src/features/office/office.config.ts`. No API key is required.
+
+The map starts collapsed. Leaflet code and map tiles load only after opening it;
+the readable address and external OpenStreetMap link are always available.
+Tile failures show a localized error and retry action. If the map's JavaScript
+module fails to load, the address and external link remain usable; reload the
+page to retry downloading that module. Browser geolocation is not requested.
+
+Tiles require browser HTTPS access to `tile.openstreetmap.org`. Keep visible
+OpenStreetMap attribution and the browser's normal Referer and cache behavior,
+following the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+The public tile service has no availability guarantee. Do not add bulk downloads
+or offline prefetching; changing providers also requires updating attribution.
+
 ## Docker and remaining delivery
 
 Compose currently provides the database only. Web and API run through npm;
@@ -447,10 +471,10 @@ and final delivery checks will be added in subsequent stages.
 The full Junior+ matrix is included in the delivery scope, as selected on
 October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders and Products
 are implemented, together with Russian/Ukrainian i18n and a persisted language
-preference and JWT authentication for inventory mutations. Inventory charts, an
-office location map, and meaningful lazy loading remain planned. These features are
-tracked with completion criteria in [TODO.md](TODO.md)
-and must be verified before final submission.
+preference and JWT authentication for inventory mutations. Inventory charts,
+the demo office map, and meaningful lazy loading are also implemented and verified.
+Remaining CI, Docker, deployment, and submission checks are tracked in
+[TODO.md](TODO.md).
 
 MySQL data persists in a named volume. To stop the local database while
 preserving it:

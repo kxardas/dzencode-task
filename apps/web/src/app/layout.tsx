@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { TopMenu } from "@/components/layout/top-menu";
 import { StoreProvider } from "@/store/store-provider";
 import { LocaleProvider, LocaleText } from "@/i18n/locale-provider";
+import { OfficeLocation } from "@/features/office/office-location";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@/styles/globals.scss";
 
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   >
                     {children}
                   </Suspense>
+                  <OfficeLocation />
                 </main>
               </div>
             </StoreProvider>

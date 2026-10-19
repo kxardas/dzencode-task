@@ -169,7 +169,35 @@ the API's configured localhost:3000 origin; no inventory records were changed.
 
 Five statistics tests cover counts, filter independence, localization,
 empty/error/retry states, creation, cascading deletion, and failed refresh.
-The current frontend suite contains 106 passing tests.
+The current frontend suite contains 112 passing tests.
+
+## Demo office map
+
+`OfficeLocation` renders a shared section below the page content. Its address,
+demo notice, and external OpenStreetMap link render without loading Leaflet.
+The location is explicitly demo data at the real Gulliver business centre,
+Sportyvna Square, 1-A, Kyiv, not a company address.
+Edit coordinates, zoom, and RU/UK addresses in
+`src/features/office/office.config.ts`; the external link uses the same coordinates.
+
+Opening the section loads `OfficeMap` through `next/dynamic` with SSR disabled,
+because Leaflet requires browser APIs. React Leaflet provides panning, zoom,
+a marker, and its address popup. A CSS marker avoids external marker-image assets.
+Closing unmounts the map; reopening creates it again. Labels follow the current
+locale. Tile errors show a retry action that remounts the map. Failed module
+downloads show an error while preserving the address/link; reloading the page
+retries the module download.
+
+OpenStreetMap tiles need external HTTPS access, visible attribution, and normal
+browser caching/Referer behavior. No API key or geolocation permission is needed.
+See [provider requirements and limitations](../../README.md#demo-office-map).
+
+Six tests cover initial server-rendered fallback content, opening/closing,
+the actual Leaflet marker/controls/attribution, localization, tile failure/retry,
+and failed module loading. Chrome desktop and 320×740 review verified the map,
+popup, zoom, readable attribution, and RU/UK switching. Chrome Network showed
+no tile requests after page reload with the map collapsed and tile requests
+after opening it. Browser checks did not modify inventory.
 
 ## Authentication
 

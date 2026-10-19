@@ -126,7 +126,7 @@ decisions for demonstrating the PDF's technologies.
   these guarantees while adding the remaining features.
 - [x] **Unit tests.** Vitest and React Testing Library cover inventory behavior,
   validation, errors, clock updates, and session counting. The verified suite
-  includes 106 frontend tests and 28 backend unit tests. Add behavioral tests
+  includes 112 frontend tests and 28 backend unit tests. Add behavioral tests
   alongside each remaining feature; integration tests supplement unit coverage.
 - [x] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
   Hydration and RTK Query caching/mutations preserve counts, filtering, and
@@ -211,11 +211,23 @@ decisions for demonstrating the PDF's technologies.
   and Orders/Products navigation. Current inventory has 24 products across nine
   types; filtering the list to four monitors leaves the chart total at 24.
   Browser checks only read inventory and change local UI preferences.
-- [ ] **Maps.** Display an office location on an interactive map with a marker
+- [x] **Maps.** Display an office location on an interactive map with a marker
   and a readable address. Use configurable, clearly identified demo coordinates;
   provide an accessible address fallback and handle map-loading failures.
   Document external map/tile requirements and attribution; do not add delivery
   tracking or require browser geolocation.
+  A shared expandable React Leaflet map shows the real Gulliver business centre
+  at Sportyvna Square, 1-A, Kyiv, as explicitly identified demo data.
+  Coordinates, zoom, and RU/UK addresses are configured in
+  `office.config.ts`. The address and external map link render before opening;
+  the browser-only map module and tiles load on demand. Tile failures offer
+  retry; failed module loading preserves the address/link. Public OpenStreetMap
+  tile requirements, attribution, caching, and availability limits are documented
+  in the READMEs. Six tests cover fallback SSR, map controls/marker/attribution,
+  opening/closing, locale switching, and tile/module failures. All 112 web tests,
+  lint, TypeScript, and production build pass. Chrome desktop and 320×740 review
+  verified the real map, popup, zoom, RU/UK, and visible attribution. Network
+  showed no tile requests before opening and tile requests afterwards.
 - [x] **Lazy loading.** Defer a meaningful noncritical feature, such as the chart
   or office map. Show a loading state and verify its code loads on demand and
   still works after client-side navigation. Confirm actual bundle/network

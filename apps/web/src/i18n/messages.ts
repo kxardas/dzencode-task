@@ -2,6 +2,18 @@ export type Locale = "ru" | "uk";
 export const intlLocales: Record<Locale, string> = { ru: "ru-RU", uk: "uk-UA" };
 
 const ru = {
+  officeLocation: "Расположение офиса",
+  demoOfficeNotice: "Демонстрационная локация, не адрес компании.",
+  showMap: "Показать карту",
+  hideMap: "Скрыть карту",
+  officeMap: "Карта демонстрационного офиса",
+  demoOfficeMarker: "Демонстрационный офис",
+  loadingMap: "Загрузка карты…",
+  mapError:
+    "Не удалось загрузить карту полностью. Адрес и ссылка на OpenStreetMap доступны выше.",
+  openStreetMap: "Открыть в OpenStreetMap",
+  zoomIn: "Увеличить масштаб",
+  zoomOut: "Уменьшить масштаб",
   login: "Вход",
   logout: "Выйти",
   loggingIn: "Вход…",
@@ -121,6 +133,18 @@ export type MessageKey = keyof typeof ru;
 export const messages = {
   ru,
   uk: {
+    officeLocation: "Розташування офісу",
+    demoOfficeNotice: "Демонстраційна локація, не адреса компанії.",
+    showMap: "Показати карту",
+    hideMap: "Приховати карту",
+    officeMap: "Карта демонстраційного офісу",
+    demoOfficeMarker: "Демонстраційний офіс",
+    loadingMap: "Завантаження карти…",
+    mapError:
+      "Не вдалося завантажити карту повністю. Адреса й посилання на OpenStreetMap доступні вище.",
+    openStreetMap: "Відкрити в OpenStreetMap",
+    zoomIn: "Збільшити масштаб",
+    zoomOut: "Зменшити масштаб",
     login: "Вхід",
     logout: "Вийти",
     loggingIn: "Вхід…",
