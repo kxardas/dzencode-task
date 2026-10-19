@@ -93,8 +93,8 @@ All nine Junior+ competencies below are included in the delivery scope.
   POST /api/products and an inline form in the selected order panel are
   implemented. Both layers validate strings, dates/order, and decimal prices.
   Pending controls, cancellation, failures/retry, successful persistence, and
-  refreshing products/counts/totals are covered. API checks pass: 26 unit,
-  20 database/HTTP, and two Socket.io tests; web checks pass: 92 tests. Safari
+  refreshing products/counts/totals are covered. API checks pass: 28 unit,
+  28 database/HTTP, and two Socket.io tests; web checks pass: 101 tests. Safari
   verified the form layout, required-field errors, cancellation, and successful
   creation. The order panel, count, USD/UAH totals, product list, type options,
   associations, and warranty dates updated correctly. The temporary QA order and
@@ -127,7 +127,7 @@ decisions for demonstrating the PDF's technologies.
   these guarantees while adding the remaining features.
 - [x] **Unit tests.** Vitest and React Testing Library cover inventory behavior,
   validation, errors, clock updates, and session counting. The verified suite
-  includes 92 frontend tests and 26 backend unit tests. Add behavioral tests
+  includes 101 frontend tests and 28 backend unit tests. Add behavioral tests
   alongside each remaining feature; integration tests supplement unit coverage.
 - [x] **Actual SSR with Next.js.** Initial HTML contains real inventory data.
   Hydration and RTK Query caching/mutations preserve counts, filtering, and
@@ -167,12 +167,35 @@ decisions for demonstrating the PDF's technologies.
   switching. Russian server/initial hydration snapshots prevent mismatches before
   restoring the saved locale. Safari verified Ukrainian restoration after refresh.
   All 92 web tests, lint, TypeScript, and production build pass.
-- [ ] **JWT authentication.** Add a small login/logout flow and protect inventory
+- [x] **Fix uncached-data navigation insights.** Orders/Products have localized
+  route-level `loading.tsx` boundaries below the shared layout. Safari's Next.js
+  Navigation Inspector verified each loading shell during paused client navigation
+  and the populated list after resuming. No blocking-route insight appeared.
+  SSR remains uncached/request-time. A delayed Suspense hydration test and browser
+  refresh with saved Ukrainian verify that language restoration remains consistent.
+- [x] **JWT authentication.** Add a small login/logout flow and protect inventory
   mutations on the server. Use hashed passwords and expiring, validated JWTs
   with an HttpOnly cookie and appropriate protection for cookie-authenticated
   writes. Verify unauthenticated/expired/invalid-token requests and logout.
   Document evaluator access; configure secrets outside Git. Keep registration,
   complex roles, and unrelated account management outside this feature.
+  AuthModule provides login/session/logout, scrypt password verification, expiring
+  JWTs in HttpOnly cookies, and trusted Origin/custom-header guards. One configured
+  evaluator account keeps the feature small; setup preserves private local access.
+  Following the October 18 readability review, auth is stateless: no session
+  registry, revocation, login limiter, or refresh tokens. Logout clears the cookie;
+  a copied JWT remains valid until expiry, including across API restarts.
+  Frontend auth uses standard RTK Query Session tags, without custom cancellation,
+  polling, or manual cache writes. The login form uses local React state.
+  See [authentication and evaluator access](docs/authentication.md) for the flow,
+  deliberate limits, and production HTTPS/same-site deployment requirements.
+  Automated checks cover valid/invalid login, protected writes, expiry, JWT
+  validation, cookie clearing, trusted headers, and session cache refresh.
+  Verified after simplification: 101 web tests, 28 API unit tests, 30 integration
+  tests, lint, and both builds. The existing local evaluator login/session/logout
+  also passed an HTTP check without inventory changes.
+  Safari previously checked the full login/refresh/logout workflow and mobile UI;
+  deployment verification remains a release task.
 - [ ] **Charts.** Show a chart of product counts by type using actual inventory
   data. Creation/deletion updates the figures; empty/error states and an
   accessible textual equivalent are available. Verify the values against the API.
@@ -194,7 +217,9 @@ decisions for demonstrating the PDF's technologies.
   connection tracking. Both applications pass applicable checks.
   Frontend Vitest/React Testing Library is configured; Orders fetching tests
   pass. CI and remaining feature coverage are planned. Review the existing
-  ESLint dependency-chain advisory reported by npm audit before submission.
+  ESLint dependency-chain advisory reported by npm audit before submission, plus
+  the existing API Prisma/driver and Nest CLI dependency advisories found while
+  adding JWT. Do not use forced major upgrades as an automatic audit fix.
 - [ ] **Package the full environment with Docker Compose.** Web, API, and
   MySQL start with `docker compose up --build`. Migrations and seed setup are
   documented, database data persists, and configuration uses environment

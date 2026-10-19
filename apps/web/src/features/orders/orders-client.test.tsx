@@ -11,7 +11,8 @@ import { renderToString } from "react-dom/server";
 import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inventoryApi } from "@/store/api";
-import { makeStore, type AppStore } from "@/store/store";
+import type { AppStore } from "@/store/store";
+import { makeAuthenticatedStore as makeStore } from "@/test/auth-store";
 import { OrdersClient } from "./orders-client";
 import type { OrderSummary } from "./types";
 
@@ -136,8 +137,8 @@ describe("Orders SSR and RTK Query", () => {
     );
     await waitFor(() =>
       expect(
-          inventoryApi.endpoints.getOrders.select()(store.getState()).status,
-        ).toBe("fulfilled"),
+        inventoryApi.endpoints.getOrders.select()(store.getState()).status,
+      ).toBe("fulfilled"),
     );
     expect(
       screen.queryByRole("article", { name: orders[0].title }),

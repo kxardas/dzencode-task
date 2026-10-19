@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useLocale } from "./locale-provider";
 import { translate } from "./messages";
 
-export function usePageMetadata(page: "orders" | "products") {
+export function usePageMetadata(page: "orders" | "products" | "login") {
   const { locale } = useLocale();
   useEffect(() => {
     const title = `${translate(locale, page)} | Orders & Products`;

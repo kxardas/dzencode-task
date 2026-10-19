@@ -30,6 +30,7 @@ Follow the [root setup guide](../../README.md) to start MySQL and configure
 
 ```bash
 npm ci
+npm run auth:setup
 npm run db:deploy
 npm run db:seed
 npm run start:dev
@@ -69,7 +70,9 @@ Watch/debug mode uses `tsconfig.dev.json` and writes to `build/`, including its
 incremental compiler cache. Production builds and HTTP integration tests use
 `dist/`. These separate outputs allow `npm run build` to run without deleting
 files used by an active dev server. Both output directories are ignored by Git.
-`npm run start:prod` runs the explicit `dist/main.js` entry point.
+`npm run start:prod` sets production mode through a small portable launcher and
+loads `dist/main.js`. It requires an HTTPS `FRONTEND_URL` and production credentials;
+use `start:dev` for local HTTP development.
 
 Unit tests validate connection configuration, order-summary calculations,
 product serialization/creation, defaults, warranty ordering, and error handling.
@@ -89,7 +92,28 @@ count updates, duplicate/disconnection handling, and reconnecting socket IDs.
 Socket.io integration tests use real polling/WebSocket clients and an isolated
 Nest server without a database to verify connection, closure, refresh, and
 automatic reconnection.
-The current suite has 26 unit tests, 20 database/HTTP integration tests,
+The current suite has 28 unit tests, 28 database/HTTP integration tests,
 and two Socket.io integration tests.
+
+## Authentication
+
+Inventory reads and sockets are public. `POST /api/products` and
+`DELETE /api/orders/:id` require a valid JWT cookie plus the exact configured
+`Origin` and `X-Inventory-Request: 1`. A dedicated AuthModule owns login/session/
+logout endpoints, password verification, JWT validation, and guards.
+
+Run `npm run auth:setup` once to generate private local settings and evaluator
+access in ignored `.auth-local.json`. Existing secrets are preserved. The API
+requires `JWT_SECRET`, `DEMO_USERNAME`, and `DEMO_PASSWORD_HASH` on startup.
+For production configure `NODE_ENV=production`, HTTPS, fresh credentials, and
+same-site web/API hosting. The cookie is HttpOnly, SameSite=Lax, fifteen minutes,
+and Secure in production. Logout clears the browser cookie. JWTs remain valid
+until expiry, including across API restarts; there is no server session registry.
+There is no registration, login limiter, or refresh-token flow.
+
+See [authentication and evaluator access](../../docs/authentication.md) for the
+request contract, password hashing, environment, and deployment constraints.
+Auth tests exercise valid/invalid login, cookie flags, actual expiry, protected
+writes, trusted write headers, cookie clearing, and stateless restart behavior.
 
 See [data decisions and planned contracts](../../docs/data-contracts.md).

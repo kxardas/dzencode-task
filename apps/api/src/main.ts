@@ -7,6 +7,9 @@ async function bootstrap() {
 
   app.enableCors({
     origin: process.env.FRONTEND_URL ?? 'http://localhost:3000',
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'X-Inventory-Request'],
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   });
 
   app.setGlobalPrefix('api');

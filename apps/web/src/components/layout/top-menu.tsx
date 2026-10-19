@@ -6,6 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { HeaderClock } from "./header-clock";
 import { SessionCounter } from "./session-counter";
+import { AuthControls } from "@/features/auth/auth-controls";
 
 export function TopMenu() {
   const { t } = useLocale();
@@ -23,6 +24,7 @@ export function TopMenu() {
         <HeaderClock />
         <SessionCounter />
         <LanguageSelect />
+        <AuthControls />
       </div>
     </header>
   );

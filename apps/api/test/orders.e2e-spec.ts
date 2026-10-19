@@ -1,7 +1,12 @@
 import '../src/config/environment.js';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
+import { AUTH_CONFIG } from '../dist/auth/auth.config.js';
+import {
+  testAuthConfig,
+  authenticateApp,
+  authenticatedRequest,
+} from './auth-helpers.js';
 import { AppModule } from '../dist/app.module.js';
 import { PrismaService } from '../dist/prisma/prisma.service.js';
 import { PrismaClient } from '../src/generated/prisma/client.js';
@@ -13,12 +18,15 @@ import { createDatabaseAdapter } from '../src/prisma/prisma.adapter.js';
 
 async function createApp(database: unknown): Promise<INestApplication> {
   const module = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(AUTH_CONFIG)
+    .useValue(testAuthConfig)
     .overrideProvider(PrismaService)
     .useValue(database)
     .compile();
   const app = module.createNestApplication({ logger: false });
   app.setGlobalPrefix('api');
   await app.init();
+  await authenticateApp(app);
   return app;
 }
 
@@ -59,7 +67,7 @@ describe('Orders HTTP API', () => {
 
         const app = await createApp({ order: transaction.order });
         try {
-          const response = await request(app.getHttpServer())
+          const response = await authenticatedRequest(app)
             .get('/api/orders')
             .expect(200);
           const { data } = response.body as { data: OrderSummary[] };
@@ -85,7 +93,7 @@ describe('Orders HTTP API', () => {
             data.findIndex((order) => order.id === populated.id),
           );
 
-          const details = await request(app.getHttpServer())
+          const details = await authenticatedRequest(app)
             .get(`/api/orders/${populated.id}`)
             .expect(200);
           const { data: order } = details.body as { data: OrderDetails };
@@ -114,7 +122,7 @@ describe('Orders HTTP API', () => {
             });
           }
 
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get(`/api/orders/${empty.id}`)
             .expect(200)
             .expect({
@@ -138,7 +146,7 @@ describe('Orders HTTP API', () => {
   it('returns an empty data array when the database has no orders', async () => {
     const app = await createApp({ order: { findMany: async () => [] } });
     try {
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .get('/api/orders')
         .expect(200)
         .expect({ data: [] });
@@ -185,7 +193,7 @@ describe('Orders HTTP API', () => {
         const app = await createApp({ order: transaction.order });
 
         try {
-          const response = await request(app.getHttpServer())
+          const response = await authenticatedRequest(app)
             .delete(`/api/orders/${deleted.id}`)
             .expect(204);
           expect(response.text).toBe('');
@@ -202,25 +210,25 @@ describe('Orders HTTP API', () => {
             }),
           ).toEqual(retained);
 
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get(`/api/orders/${deleted.id}`)
             .expect(404);
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .delete(`/api/orders/${deleted.id}`)
             .expect(404);
 
-          const list = await request(app.getHttpServer())
+          const list = await authenticatedRequest(app)
             .get('/api/orders')
             .expect(200);
           const { data } = list.body as { data: OrderSummary[] };
           expect(data.some((order) => order.id === deleted.id)).toBe(false);
           expect(data.some((order) => order.id === retained.id)).toBe(true);
 
-          const emptyResponse = await request(app.getHttpServer())
+          const emptyResponse = await authenticatedRequest(app)
             .delete(`/api/orders/${empty.id}`)
             .expect(204);
           expect(emptyResponse.text).toBe('');
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get(`/api/orders/${empty.id}`)
             .expect(404);
         } finally {
@@ -244,15 +252,13 @@ describe('Orders HTTP API', () => {
     });
     try {
       for (const path of ['/api/orders', '/api/orders/1']) {
-        const response = await request(app.getHttpServer())
-          .get(path)
-          .expect(500);
+        const response = await authenticatedRequest(app).get(path).expect(500);
         expect(response.body).toEqual({
           statusCode: 500,
           message: 'Internal server error',
         });
       }
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .delete('/api/orders/1')
         .expect(500)
         .expect({ statusCode: 500, message: 'Internal server error' });
@@ -266,7 +272,7 @@ describe('Orders HTTP API', () => {
     const deleteMany = vi.fn().mockResolvedValue({ count: 0 });
     const app = await createApp({ order: { findUnique, deleteMany } });
     try {
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .get('/api/orders/4294967295')
         .expect(404)
         .expect({
@@ -274,7 +280,7 @@ describe('Orders HTTP API', () => {
           message: 'Order 4294967295 not found',
           error: 'Not Found',
         });
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .delete('/api/orders/4294967295')
         .expect(404)
         .expect({
@@ -300,14 +306,12 @@ describe('Orders HTTP API', () => {
         '4294967296',
         '9007199254740993',
       ]) {
-        const response = await request(app.getHttpServer())
+        const response = await authenticatedRequest(app)
           .get(`/api/orders/${id}`)
           .expect(400);
         expect(response.body.message).toEqual(expect.any(Array));
         expect(response.body.error).toBe('Bad Request');
-        await request(app.getHttpServer())
-          .delete(`/api/orders/${id}`)
-          .expect(400);
+        await authenticatedRequest(app).delete(`/api/orders/${id}`).expect(400);
       }
       expect(findUnique).not.toHaveBeenCalled();
       expect(deleteMany).not.toHaveBeenCalled();

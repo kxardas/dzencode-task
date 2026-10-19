@@ -21,6 +21,8 @@ cached list, and closes the deleted order's panel. A validated create-product
 form is available within a selected order's panel. The shared header displays
 the browser's local date/time and a server-maintained active-tab counter.
 The header offers Russian/Ukrainian UI languages and remembers the choice locally.
+JWT login/logout is implemented: viewing inventory is public; adding products
+and deleting orders require the evaluator session.
 
 The frontend root redirects to `/orders`; `/products` is available through
 the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
@@ -94,6 +96,7 @@ npm --prefix apps/api ci
 cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
+npm --prefix apps/api run auth:setup
 ```
 
 Start MySQL, apply committed migrations, and insert optional demo data:
@@ -183,6 +186,8 @@ A missing order returns 404. The ID must be an integer between 1 and
 4294967295 (the database's unsigned integer range); invalid IDs return 400.
 
 `DELETE /api/orders/:id` removes an order and all its associated products.
+This write requires an authenticated cookie and trusted Origin/custom header;
+see [authentication and evaluator access](docs/authentication.md).
 Successful deletion returns `204 No Content` with no response body. Other
 orders and their products are preserved. A missing or already deleted order
 returns 404, and invalid IDs return 400. Database failures return a generic
@@ -219,7 +224,8 @@ missing products return 404. Deleted orders' products disappear from these
 endpoints through the existing cascade policy.
 
 `POST /api/products` creates a product for an existing order. Replace `orderId`
-below with an existing order ID:
+below with an existing order ID. This write also requires an authenticated cookie
+and trusted Origin/custom header; see [authentication](docs/authentication.md).
 
 ```bash
 curl -X POST http://localhost:3001/api/products \
@@ -288,6 +294,20 @@ load. Switching languages preserves the selected order, product filter, current
 form values and validation feedback, inventory cache, and socket connection.
 It does not reload the page or translate stored inventory data.
 
+## Authentication and evaluator access
+
+Run `npm --prefix apps/api run auth:setup` once after initial environment setup.
+It generates a local random password and signing secret without replacing an
+existing configuration. Read ignored `apps/api/.auth-local.json` for local
+evaluator credentials, then open `/login`. Keep this file private and out of Git.
+The API stores a salted scrypt password hash in its ignored `.env`.
+
+Login issues a fifteen-minute HttpOnly JWT cookie. Logout clears the browser
+cookie; the stateless API does not revoke copied tokens before expiry. Inventory
+reads remain public. Changes require authentication and CSRF-protected writes;
+tokens and credentials are not saved in Web Storage. See the complete
+[auth contract, configuration, tests, and deployment constraints](docs/authentication.md).
+
 ## Environment variables
 
 Root `.env.example` configures the MySQL container. `apps/api/.env.example`
@@ -304,6 +324,9 @@ local `.env` files are ignored by Git.
 | API `.env` | `SHADOW_DATABASE_URL` | Separate database used by development migrations |
 | API `.env` | `PORT` | API port; defaults to 3001 |
 | API `.env` | `FRONTEND_URL` | Allowed CORS origin |
+| API `.env` | `JWT_SECRET` | Required private JWT signing secret; generated locally by `auth:setup` |
+| API `.env` | `DEMO_USERNAME`, `DEMO_PASSWORD_HASH` | Required evaluator account and salted password hash |
+| API environment | `NODE_ENV` | Use `production` with HTTPS for Secure authentication cookies |
 | Web `.env.local` | `NEXT_PUBLIC_API_URL` | REST API URL including `/api`; defaults to `http://localhost:3001/api` |
 | Web `.env.local` | `API_URL` | Optional server-only REST base URL including `/api`; falls back to `NEXT_PUBLIC_API_URL`, then localhost |
 | Web `.env.local` | `NEXT_PUBLIC_SOCKET_URL` | Socket.io server origin without `/api`; defaults to `http://localhost:3001` |
@@ -381,7 +404,10 @@ covering count broadcasts, closing, refreshing, and automatic reconnection.
 Integration-test writes are rolled back; fixture records are not deleted.
 MySQL auto-increment counters can advance during rolled-back tests.
 
-After building, start the applications in separate terminals:
+For deployment, configure production authentication settings and an HTTPS
+`FRONTEND_URL` before starting the applications in separate terminals.
+The API production launcher enforces production mode and Secure cookies;
+use `start:dev` for local HTTP development.
 
 ```bash
 npm --prefix apps/api run start:prod
@@ -400,8 +426,8 @@ and final delivery checks will be added in subsequent stages.
 The full Junior+ matrix is included in the delivery scope, as selected on
 October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders and Products
 are implemented, together with Russian/Ukrainian i18n and a persisted language
-preference. JWT authentication for inventory mutations, inventory charts, an office
-location map, and meaningful lazy loading remain planned. These features are
+preference and JWT authentication for inventory mutations. Inventory charts, an
+office location map, and meaningful lazy loading remain planned. These features are
 tracked with completion criteria in [TODO.md](TODO.md)
 and must be verified before final submission.
 

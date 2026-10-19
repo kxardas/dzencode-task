@@ -17,28 +17,38 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="ru">
       <body>
         <LocaleProvider>
-          <a className="skip-link" href="#main-content">
-            <LocaleText id="skip" />
-          </a>
-          <div className="app-shell">
-            <TopMenu />
-            <Sidebar />
-            <main
-              className="app-shell__content"
-              id="main-content"
-              tabIndex={-1}
-            >
-              <Suspense
-                fallback={
-                  <p className="text-secondary" role="status">
-                    <LocaleText id="loadingPage" />
-                  </p>
-                }
-              >
-                <StoreProvider>{children}</StoreProvider>
-              </Suspense>
-            </main>
-          </div>
+          <Suspense
+            fallback={
+              <p role="status">
+                <LocaleText id="loadingPage" />
+              </p>
+            }
+          >
+            <StoreProvider>
+              <a className="skip-link" href="#main-content">
+                <LocaleText id="skip" />
+              </a>
+              <div className="app-shell">
+                <TopMenu />
+                <Sidebar />
+                <main
+                  className="app-shell__content"
+                  id="main-content"
+                  tabIndex={-1}
+                >
+                  <Suspense
+                    fallback={
+                      <p className="text-secondary" role="status">
+                        <LocaleText id="loadingPage" />
+                      </p>
+                    }
+                  >
+                    {children}
+                  </Suspense>
+                </main>
+              </div>
+            </StoreProvider>
+          </Suspense>
         </LocaleProvider>
       </body>
     </html>

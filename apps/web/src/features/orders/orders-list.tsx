@@ -4,7 +4,8 @@ import { useLocale } from "@/i18n/locale-provider";
 
 import { ClipboardList } from "lucide-react";
 import { PagePlaceholder } from "@/components/ui/page-placeholder";
-import { useGetOrdersQuery } from "@/store/api";
+import { useGetOrdersQuery, useGetSessionQuery } from "@/store/api";
+import Link from "next/link";
 import { OrderRow } from "./order-row";
 import { useState } from "react";
 import { OrderDetailsPanel } from "./order-details-panel";
@@ -12,6 +13,7 @@ import { OrderDeleteDialog } from "./order-delete-dialog";
 
 export function OrdersList() {
   const { t } = useLocale();
+  const { data: session } = useGetSessionQuery();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
@@ -39,6 +41,11 @@ export function OrdersList() {
           {t("ordersDescription")}
         </p>
       </div>
+      {!session?.user && (
+        <p>
+          <Link href="/login">{t("signInToEdit")}</Link>
+        </p>
+      )}
       {isLoading && (
         <div className="orders-state" role="status">
           <span
@@ -92,6 +99,7 @@ export function OrdersList() {
                     onSelect={setSelectedOrderId}
                     onDelete={setPendingDeleteId}
                     isSelected={selectedOrderId === order.id}
+                    canManage={Boolean(session?.user)}
                   />
                 ))}
               </ul>

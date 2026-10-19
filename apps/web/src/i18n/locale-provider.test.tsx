@@ -7,11 +7,13 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { hydrateRoot } from "react-dom/client";
+import { Suspense } from "react";
 import { renderToString } from "react-dom/server";
 import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inventoryApi } from "@/store/api";
-import { makeStore, type AppStore } from "@/store/store";
+import type { AppStore } from "@/store/store";
+import { makeAuthenticatedStore as makeStore } from "@/test/auth-store";
 import { OrdersClient } from "@/features/orders/orders-client";
 import { ProductsClient } from "@/features/products/products-client";
 import type { OrderSummary } from "@/features/orders/types";
@@ -91,6 +93,56 @@ afterEach(() => {
 });
 
 describe("Locale preference", () => {
+  it("hydrates a delayed Suspense subtree after the surrounding UI has restored Ukrainian", async () => {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, "uk");
+    let client = false;
+    let ready = false;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    function Delayed() {
+      if (client && !ready) throw gate;
+      return (
+        <p>
+          <LocaleText id="skip" />
+        </p>
+      );
+    }
+    const tree = (
+      <LocaleProvider>
+        <h1>
+          <LocaleText id="orders" />
+        </h1>
+        <Suspense fallback={null}>
+          <Delayed />
+        </Suspense>
+      </LocaleProvider>
+    );
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(tree);
+    document.body.append(container);
+    const error = vi.fn();
+    let root!: ReturnType<typeof hydrateRoot>;
+    client = true;
+    try {
+      await act(async () => {
+        root = hydrateRoot(container, tree, { onRecoverableError: error });
+      });
+      expect(screen.getByRole("heading")).toHaveTextContent("Надходження");
+      expect(container).toHaveTextContent("Перейти к содержимому");
+      await act(async () => {
+        ready = true;
+        release();
+        await gate;
+      });
+      expect(container).toHaveTextContent("Перейти до вмісту");
+      expect(error).not.toHaveBeenCalled();
+    } finally {
+      if (root) act(() => root.unmount());
+      container.remove();
+    }
+  });
   it.each([null, "invalid", "ua"])(
     "defaults to Russian for missing/invalid storage (%s)",
     (saved) => {

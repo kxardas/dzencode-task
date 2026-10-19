@@ -31,6 +31,9 @@ provider, and inventory lists use Client Components. The provider creates its ow
 store instance, persists across navigation, and sits behind Suspense for
 Next.js Cache Components compatibility. Orders and Products read inventory on the
 Next.js server at request time; type filtering and order details fetch in the browser.
+The provider now also wraps the header so authentication controls share the same
+session query cache as inventory actions. Each inventory route has `loading.tsx`,
+placing its loading boundary below the shared layout for client navigation.
 
 ## Development
 
@@ -117,8 +120,8 @@ and failed background-refresh states are handled.
 ## Localization and storage
 
 `src/i18n/messages.ts` defines typed RU/UK dictionaries and interpolation.
-`LocaleProvider` owns a per-provider preference store subscribed with
-`useSyncExternalStore`. Server rendering and initial hydration always use `ru`;
+`LocaleProvider` owns a per-provider preference store; each consumer subscribes
+with `useSyncExternalStore`. Server rendering and initial hydration always use `ru`;
 the saved `inventory.locale` (`ru` or `uk`) is restored from `localStorage` after
 hydration. This can briefly display Russian before a saved Ukrainian preference
 appears. No language cookie or locale-specific route is required.
@@ -139,6 +142,28 @@ selected translation. Observers are removed on unmount. The layout and route pag
 remain Server Components; passing them through the language provider does not
 change that boundary.
 
+Each consumer uses its own server snapshot so a Suspense subtree that hydrates
+later does not mismatch after the surrounding UI has already restored Ukrainian.
+The store shares one browser storage-event listener across its subscribers.
+
+## Authentication
+
+`/login` provides a localized evaluator login form; header controls restore the
+current session and offer logout. Auth endpoints are part of `inventoryApi`.
+Fetch uses `credentials: "include"` and a custom header on writes; the API verifies
+the browser origin. JWTs stay in HttpOnly cookies and never enter the Redux cache
+or Web Storage. Redux DevTools are disabled to keep login passwords out of action
+history. The form uses local React state and clears its password after a request.
+
+The public user summary controls mutation buttons. The session query provides a
+`Session` tag; successful login/logout and 401 inventory writes invalidate it so
+RTK Query refreshes the summary. Focus/reconnect also refresh queries. There is
+no polling, manual cache update, or request cancellation for authentication.
+Failed writes preserve inventory/drafts; failed logout offers retry.
+
+See [evaluator setup and API contract](../../docs/authentication.md). SSR inventory
+reads remain public and do not forward authentication cookies to the API.
+
 ## Checks
 
 ```bash
@@ -148,7 +173,7 @@ npm run build
 ```
 
 Vitest, React Testing Library, and jsdom exercise real RTK Query requests with
-mocked fetch responses. Ninety-two tests cover loading/data formatting, empty
+mocked fetch responses. One hundred three tests cover loading/data formatting, empty
 collections, safe errors and retry, cache reuse, failed background refresh,
 order selection, switching, panel closing, and deletion confirmation/cancellation.
 Deletion coverage includes pending-state controls, duplicate submissions,
@@ -181,3 +206,7 @@ persistence, cross-tab changes and cleanup, hydration with a saved Ukrainian
 preference, late metadata, draft/error/filter preservation, localized dates, and
 switching without another inventory request or socket connection. Test setup
 uses jsdom's origin-scoped storage instead of Node 26's optional native storage.
+Auth tests cover public read-only UI, login validation/pending/safe errors,
+credentials/custom headers, logout retry, expired mutations, and session tag
+invalidation. A delayed Suspense hydration regression test covers saved
+language restoration; route loading placeholders are checked in both locales.

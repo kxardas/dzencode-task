@@ -1,7 +1,7 @@
 import { useLocale } from "@/i18n/locale-provider";
 import { Trash2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { useDeleteOrderMutation } from "@/store/api";
+import { useDeleteOrderMutation, useGetSessionQuery } from "@/store/api";
 import type { OrderSummary } from "./types";
 
 interface OrderDeleteDialogProps {
@@ -19,7 +19,9 @@ export function OrderDeleteDialog({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const submittingRef = useRef(false);
-  const [deleteOrder, { isLoading, isError }] = useDeleteOrderMutation();
+  const [deleteOrder, { isLoading, isError, error }] = useDeleteOrderMutation();
+  const { data: session } = useGetSessionQuery();
+  const unauthorized = error && "status" in error && error.status === 401;
 
   async function handleDelete() {
     if (submittingRef.current) return;
@@ -84,7 +86,7 @@ export function OrderDeleteDialog({
         </p>
         {isError && (
           <p className="order-delete-dialog__error" role="alert">
-            {t("deleteError")}
+            {unauthorized ? t("authExpired") : t("deleteError")}
           </p>
         )}
       </div>
@@ -101,7 +103,7 @@ export function OrderDeleteDialog({
         <button
           type="button"
           className="btn btn-danger"
-          disabled={isLoading}
+          disabled={isLoading || !session?.user}
           onClick={handleDelete}
         >
           {isLoading ? (

@@ -1,0 +1,102 @@
+.auth-button {
+  --bs-btn-color: var(--inventory-text);
+  --bs-btn-bg: var(--inventory-background);
+  --bs-btn-border-color: var(--inventory-border);
+  --bs-btn-hover-color: var(--inventory-text);
+  --bs-btn-hover-bg: #e8eef0;
+  --bs-btn-hover-border-color: #b6c6cd;
+  --bs-btn-active-color: var(--inventory-text);
+  --bs-btn-active-bg: #dfe8eb;
+  --bs-btn-active-border-color: #b6c6cd;
+  --bs-btn-focus-shadow-rgb: 101, 125, 137;
+  --bs-btn-disabled-color: var(--inventory-muted);
+  --bs-btn-disabled-bg: var(--inventory-background);
+  --bs-btn-disabled-border-color: var(--inventory-border);
+  min-height: 36px;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  line-height: 20px;
+
+  &--primary {
+    --bs-btn-color: #fff;
+    --bs-btn-bg: var(--inventory-accent-dark);
+    --bs-btn-border-color: var(--inventory-accent-dark);
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: #416321;
+    --bs-btn-hover-border-color: #416321;
+    --bs-btn-active-color: #fff;
+    --bs-btn-active-bg: #35521b;
+    --bs-btn-active-border-color: #35521b;
+    --bs-btn-focus-shadow-rgb: 79, 119, 40;
+    --bs-btn-disabled-color: #fff;
+    --bs-btn-disabled-bg: var(--inventory-accent-dark);
+    --bs-btn-disabled-border-color: var(--inventory-accent-dark);
+    box-shadow: 0 3px 9px rgb(79 119 40 / 20%);
+  }
+}
+
+.top-menu .auth-controls {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+
+  a,
+  button {
+    white-space: nowrap;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  svg {
+    flex-shrink: 0;
+  }
+
+  &.auth-button {
+    font-weight: 700;
+  }
+  &__username {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.inventory-page.auth-page {
+  max-width: 540px;
+}
+.auth-form {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--inventory-border);
+  border-radius: 4px;
+  background: #fff;
+}
+
+@media (max-width: 767.98px) {
+  .top-menu {
+    flex-wrap: wrap;
+    padding-block: 8px;
+    &__status {
+      gap: 6px;
+    }
+  }
+  .auth-controls {
+    font-size: 11px;
+    &__username {
+      display: none;
+    }
+    &.auth-button,
+    .auth-button {
+      min-height: 30px;
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    svg {
+      display: none;
+    }
+  }
+}

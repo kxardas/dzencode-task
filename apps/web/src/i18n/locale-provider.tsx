@@ -18,6 +18,11 @@ function isLocale(value: string | null): value is Locale {
 function createLocaleStore() {
   let current: Locale | null = null;
   const listeners = new Set<() => void>();
+  function onStorage(event: StorageEvent) {
+    if (event.key !== LOCALE_STORAGE_KEY && event.key !== null) return;
+    current = null;
+    listeners.forEach((listener) => listener());
+  }
   return {
     getSnapshot(): Locale {
       if (current) return current;
@@ -31,15 +36,11 @@ function createLocaleStore() {
     },
     subscribe(listener: () => void) {
       listeners.add(listener);
-      function onStorage(event: StorageEvent) {
-        if (event.key !== LOCALE_STORAGE_KEY && event.key !== null) return;
-        current = null;
-        listener();
-      }
-      window.addEventListener("storage", onStorage);
+      if (listeners.size === 1) window.addEventListener("storage", onStorage);
       return () => {
         listeners.delete(listener);
-        window.removeEventListener("storage", onStorage);
+        if (listeners.size === 0)
+          window.removeEventListener("storage", onStorage);
       };
     },
     setLocale(locale: Locale) {
@@ -54,10 +55,11 @@ function createLocaleStore() {
   };
 }
 
-const LocaleContext = createContext<{
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-}>({ locale: "ru", setLocale: () => {} });
+const LocaleContext = createContext<ReturnType<typeof createLocaleStore>>({
+  getSnapshot: () => "ru",
+  subscribe: () => () => {},
+  setLocale: () => {},
+});
 const getServerSnapshot = (): Locale => "ru";
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
@@ -74,18 +76,24 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       ?.setAttribute("content", translate(locale, "description"));
   }, [locale]);
   return (
-    <LocaleContext.Provider value={{ locale, setLocale: store.setLocale }}>
-      {children}
-    </LocaleContext.Provider>
+    <LocaleContext.Provider value={store}>{children}</LocaleContext.Provider>
   );
 }
 
 export function useLocale() {
-  const context = useContext(LocaleContext);
+  const store = useContext(LocaleContext);
+  // Each streamed Suspense subtree must hydrate with its own Russian snapshot,
+  // even when an earlier subtree has already restored the saved preference.
+  const locale = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    getServerSnapshot,
+  );
   return {
-    ...context,
+    locale,
+    setLocale: store.setLocale,
     t: (key: MessageKey, values?: Record<string, string | number>) =>
-      translate(context.locale, key, values),
+      translate(locale, key, values),
   };
 }
 

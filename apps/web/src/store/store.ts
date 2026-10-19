@@ -17,6 +17,8 @@ export function makeStore() {
     return next(action);
   };
   const store = configureStore({
+    // Login actions contain the submitted password; keep them out of DevTools.
+    devTools: false,
     reducer: { [inventoryApi.reducerPath]: inventoryApi.reducer },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(

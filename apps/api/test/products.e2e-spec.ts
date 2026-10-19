@@ -1,7 +1,12 @@
 import '../src/config/environment.js';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
+import { AUTH_CONFIG } from '../dist/auth/auth.config.js';
+import {
+  testAuthConfig,
+  authenticateApp,
+  authenticatedRequest,
+} from './auth-helpers.js';
 import { AppModule } from '../dist/app.module.js';
 import { PrismaService } from '../dist/prisma/prisma.service.js';
 import { PrismaClient } from '../src/generated/prisma/client.js';
@@ -10,12 +15,15 @@ import { createDatabaseAdapter } from '../src/prisma/prisma.adapter.js';
 
 async function createApp(database: unknown): Promise<INestApplication> {
   const module = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(AUTH_CONFIG)
+    .useValue(testAuthConfig)
     .overrideProvider(PrismaService)
     .useValue(database)
     .compile();
   const app = module.createNestApplication({ logger: false });
   app.setGlobalPrefix('api');
   await app.init();
+  await authenticateApp(app);
   return app;
 }
 
@@ -68,7 +76,7 @@ describe('Products HTTP API', () => {
         const app = await createApp({ product: transaction.product });
 
         try {
-          const list = await request(app.getHttpServer())
+          const list = await authenticatedRequest(app)
             .get('/api/products')
             .expect(200);
           const { data } = list.body as { data: ProductResponse[] };
@@ -98,11 +106,11 @@ describe('Products HTTP API', () => {
           expect(positions[0]).toBeLessThan(positions[1]);
           expect(positions[1]).toBeLessThan(positions[2]);
 
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get(`/api/products/${first.id}`)
             .expect(200)
             .expect({ data: expected });
-          const filtered = await request(app.getHttpServer())
+          const filtered = await authenticatedRequest(app)
             .get('/api/products')
             .query({ type: ` ${type.toLowerCase()} ` })
             .expect(200);
@@ -110,13 +118,13 @@ describe('Products HTTP API', () => {
             data: data.filter((product) => product.type === type),
           });
           expect(filtered.body.data).toHaveLength(2);
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get('/api/products')
             .query({ type: `${type}-Missing` })
             .expect(200)
             .expect({ data: [] });
           for (const emptyType of ['', '   ']) {
-            await request(app.getHttpServer())
+            await authenticatedRequest(app)
               .get('/api/products')
               .query({ type: emptyType })
               .expect(200)
@@ -124,10 +132,10 @@ describe('Products HTTP API', () => {
           }
 
           await transaction.order.delete({ where: { id: firstOrder.id } });
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get(`/api/products/${first.id}`)
             .expect(404);
-          const remaining = await request(app.getHttpServer())
+          const remaining = await authenticatedRequest(app)
             .get('/api/products')
             .query({ type })
             .expect(200);
@@ -149,7 +157,7 @@ describe('Products HTTP API', () => {
   it('returns an empty array when there are no products', async () => {
     const app = await createApp({ product: { findMany: async () => [] } });
     try {
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .get('/api/products')
         .expect(200)
         .expect({ data: [] });
@@ -161,7 +169,7 @@ describe('Products HTTP API', () => {
   it('returns 404 for a missing product', async () => {
     const app = await createApp({ product: { findUnique: async () => null } });
     try {
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .get('/api/products/4294967295')
         .expect(404)
         .expect({
@@ -187,16 +195,14 @@ describe('Products HTTP API', () => {
         '4294967296',
         '9007199254740993',
       ]) {
-        await request(app.getHttpServer())
-          .get(`/api/products/${id}`)
-          .expect(400);
+        await authenticatedRequest(app).get(`/api/products/${id}`).expect(400);
       }
       for (const query of [
         { type: 'x'.repeat(101) },
         { type: ['Monitors', 'Keyboards'] },
         { unsupported: 'value' },
       ]) {
-        await request(app.getHttpServer())
+        await authenticatedRequest(app)
           .get('/api/products')
           .query(query)
           .expect(400);
@@ -217,7 +223,7 @@ describe('Products HTTP API', () => {
     });
     try {
       for (const path of ['/api/products', '/api/products/1']) {
-        await request(app.getHttpServer())
+        await authenticatedRequest(app)
           .get(path)
           .expect(500)
           .expect({ statusCode: 500, message: 'Internal server error' });

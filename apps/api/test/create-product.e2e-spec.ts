@@ -1,7 +1,12 @@
 import '../src/config/environment.js';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import request from 'supertest';
+import { AUTH_CONFIG } from '../dist/auth/auth.config.js';
+import {
+  testAuthConfig,
+  authenticateApp,
+  authenticatedRequest,
+} from './auth-helpers.js';
 import { AppModule } from '../dist/app.module.js';
 import { PrismaService } from '../dist/prisma/prisma.service.js';
 import { PrismaClient } from '../src/generated/prisma/client.js';
@@ -20,12 +25,15 @@ const input = {
 
 async function createApp(database: unknown): Promise<INestApplication> {
   const module = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(AUTH_CONFIG)
+    .useValue(testAuthConfig)
     .overrideProvider(PrismaService)
     .useValue(database)
     .compile();
   const app = module.createNestApplication({ logger: false });
   app.setGlobalPrefix('api');
   await app.init();
+  await authenticateApp(app);
   return app;
 }
 
@@ -43,7 +51,7 @@ describe('Product creation HTTP API', () => {
           order: transaction.order,
         });
         try {
-          const first = await request(app.getHttpServer())
+          const first = await authenticatedRequest(app)
             .post('/api/products')
             .send({ ...input, orderId: order.id })
             .expect(201);
@@ -72,11 +80,11 @@ describe('Product creation HTTP API', () => {
             '2026-10-01T00:00:00.000Z',
           );
 
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .get(`/api/products/${stored.id}`)
             .expect(200)
             .expect(first.body);
-          const second = await request(app.getHttpServer())
+          const second = await authenticatedRequest(app)
             .post('/api/products')
             .send({
               ...input,
@@ -94,7 +102,7 @@ describe('Product creation HTTP API', () => {
             specification: 'Full HD',
             photo: 'https://example.com/monitor.jpg',
           });
-          const detail = await request(app.getHttpServer())
+          const detail = await authenticatedRequest(app)
             .get(`/api/orders/${order.id}`)
             .expect(200);
           expect(detail.body.data).toMatchObject({
@@ -105,7 +113,7 @@ describe('Product creation HTTP API', () => {
           expect(detail.body.data.products).toHaveLength(2);
 
           await transaction.order.delete({ where: { id: order.id } });
-          await request(app.getHttpServer())
+          await authenticatedRequest(app)
             .post('/api/products')
             .send({ ...input, orderId: order.id })
             .expect(404);
@@ -171,7 +179,7 @@ describe('Product creation HTTP API', () => {
         { ...input, createdAt: '2020-01-01' },
       ];
       for (const body of invalidInputs) {
-        await request(app.getHttpServer())
+        await authenticatedRequest(app)
           .post('/api/products')
           .send(body)
           .expect(400);
@@ -186,7 +194,7 @@ describe('Product creation HTTP API', () => {
     const create = vi.fn();
     const app = await createApp({ product: { create } });
     try {
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .post('/api/products')
         .send({ ...input, warrantyEnd: '2025-01-01' })
         .expect(400);
@@ -205,7 +213,7 @@ describe('Product creation HTTP API', () => {
       },
     });
     try {
-      await request(app.getHttpServer())
+      await authenticatedRequest(app)
         .post('/api/products')
         .send(input)
         .expect(500)

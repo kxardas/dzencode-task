@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ProductCreateForm } from "@/features/products/product-create-form";
 import { OrderProductRow } from "./order-product-row";
 import type { OrderSummary } from "./types";
-import { useGetOrderQuery } from "@/store/api";
+import { useGetOrderQuery, useGetSessionQuery } from "@/store/api";
 
 interface OrderDetailsPanelProps {
   order: OrderSummary;
@@ -13,6 +13,7 @@ interface OrderDetailsPanelProps {
 
 export function OrderDetailsPanel({ order, onClose }: OrderDetailsPanelProps) {
   const { t } = useLocale();
+  const { data: session } = useGetSessionQuery();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [wasCreated, setWasCreated] = useState(false);
   const {
@@ -54,7 +55,8 @@ export function OrderDetailsPanel({ order, onClose }: OrderDetailsPanelProps) {
         <button
           type="button"
           className="order-details-panel__add btn"
-          disabled={!details}
+          disabled={!details || !session?.user}
+          title={!session?.user ? t("signInToEdit") : undefined}
           onClick={() => {
             setWasCreated(false);
             setShowCreateForm(true);

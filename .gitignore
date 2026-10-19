@@ -138,3 +138,6 @@ $RECYCLE.BIN/
 .turbo/
 *.pem
 AGENTS.md
+
+# Generated local evaluator access (contains a disposable password)
+apps/api/.auth-local.json

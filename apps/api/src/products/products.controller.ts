@@ -1,3 +1,5 @@
+import { AuthGuard } from '../auth/auth.guard.js';
+import { WriteOriginGuard } from '../auth/write-origin.guard.js';
 import {
   Body,
   Controller,
@@ -6,6 +8,7 @@ import {
   Post,
   Query,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { ProductIdDto } from './dto/product-id.dto.js';
@@ -17,6 +20,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @UseGuards(WriteOriginGuard, AuthGuard)
   async create(
     @Body(
       new ValidationPipe({

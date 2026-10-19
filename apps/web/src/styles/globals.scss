@@ -1,6 +1,7 @@
 @use "layout";
 @use "orders";
 @use "products";
+@use "auth";
 
 :root {
   --inventory-accent: #81b843;

@@ -1,3 +1,5 @@
+import { AuthGuard } from '../auth/auth.guard.js';
+import { WriteOriginGuard } from '../auth/write-origin.guard.js';
 import {
   Controller,
   Delete,
@@ -6,6 +8,7 @@ import {
   HttpStatus,
   Param,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { OrderIdDto } from './dto/order-id.dto.js';
 import {
@@ -31,6 +34,7 @@ export class OrdersController {
   }
 
   @Delete(':id')
+  @UseGuards(WriteOriginGuard, AuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Param(new ValidationPipe({ transform: true })) params: OrderIdDto,

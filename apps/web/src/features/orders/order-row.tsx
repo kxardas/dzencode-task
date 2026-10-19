@@ -8,6 +8,7 @@ interface OrderRowProps {
   onSelect: (id: number) => void;
   onDelete: (id: number) => void;
   isSelected: boolean;
+  canManage: boolean;
 }
 
 export function OrderRow({
@@ -15,6 +16,7 @@ export function OrderRow({
   onSelect,
   onDelete,
   isSelected,
+  canManage,
 }: OrderRowProps) {
   const { locale, t } = useLocale();
   return (
@@ -70,6 +72,8 @@ export function OrderRow({
           type="button"
           className="order-row__delete"
           aria-label={t("deleteOrder", { title: order.title })}
+          disabled={!canManage}
+          title={!canManage ? t("signInToEdit") : undefined}
           onClick={() => onDelete(order.id)}
         >
           <Trash2 size={18} strokeWidth={1.8} aria-hidden="true" />

@@ -1,7 +1,7 @@
 import { useLocale } from "@/i18n/locale-provider";
 import type { MessageKey } from "@/i18n/messages";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useCreateProductMutation } from "@/store/api";
+import { useCreateProductMutation, useGetSessionQuery } from "@/store/api";
 import {
   readProductForm,
   validateProductForm,
@@ -59,6 +59,7 @@ export function ProductCreateForm({
   onCreated,
 }: ProductCreateFormProps) {
   const { t } = useLocale();
+  const { data: session } = useGetSessionQuery();
   const formRef = useRef<HTMLFormElement>(null);
   const submittingRef = useRef(false);
   const [errors, setErrors] = useState<ProductFormErrors>({});
@@ -196,7 +197,11 @@ export function ProductCreateForm({
         </div>
         {isError && (
           <p className="product-create-form__error" role="alert">
-            {status === 404 ? t("orderUnavailable") : t("saveError")}
+            {status === 401
+              ? t("authExpired")
+              : status === 404
+                ? t("orderUnavailable")
+                : t("saveError")}
           </p>
         )}
         <div className="product-create-form__actions">
@@ -207,7 +212,11 @@ export function ProductCreateForm({
           >
             {t("cancel")}
           </button>
-          <button type="submit" className="btn btn-success">
+          <button
+            type="submit"
+            className="btn btn-success"
+            disabled={!session?.user}
+          >
             {isLoading ? t("saving") : t("saveProduct")}
           </button>
         </div>

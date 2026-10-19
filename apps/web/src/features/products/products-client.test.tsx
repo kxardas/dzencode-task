@@ -11,7 +11,8 @@ import { renderToString } from "react-dom/server";
 import { Provider } from "react-redux";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { inventoryApi } from "@/store/api";
-import { makeStore, type AppStore } from "@/store/store";
+import type { AppStore } from "@/store/store";
+import { makeAuthenticatedStore as makeStore } from "@/test/auth-store";
 import { ProductsClient } from "./products-client";
 import type { CreateProductInput, Product } from "./types";
 
