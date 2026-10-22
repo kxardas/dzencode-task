@@ -244,16 +244,19 @@ decisions for demonstrating the PDF's technologies.
 
 ## Release and delivery
 
-- [ ] **Complete behavioral tests and automated checks.** Use frontend
+- [x] **Complete behavioral tests and automated checks.** Use frontend
   Vitest/React Testing Library. Verify totals, filtering, selection,
   deletion confirmation/cancellation, validation, API errors, and socket
   connection tracking. Both applications pass applicable checks.
-  Frontend Vitest/React Testing Library is configured, with 112 passing tests.
+  Frontend Vitest/React Testing Library is configured, with 114 passing tests;
+  the API has 28 unit and 30 e2e tests passing. Both lints pass.
   CI is an optional improvement, not an assignment requirement; prioritize
   Docker and deployment as agreed with the developer. Review the existing
   ESLint dependency-chain advisory reported by npm audit before submission, plus
   the existing API Prisma/driver and Nest CLI dependency advisories found while
   adding JWT. Do not use forced major upgrades as an automatic audit fix.
+  These advisories were not addressed for submission; no forced upgrades were
+  applied.
 - [x] **Package the full environment with Docker Compose.** Web, API, and
   MySQL start with `docker compose up --build`. Migrations and seed setup are
   documented, database data persists, and configuration uses environment
@@ -300,8 +303,15 @@ decisions for demonstrating the PDF's technologies.
   Our temporary deployment archives were removed; future uploads must not
   create `.tgz` files. Preserve `/home/ubuntu/arthur/` and other applications'
   Caddy configuration.
-- [ ] **Perform the submission review.** Start from a fresh clone using the
+- [x] **Perform the submission review.** Start from a fresh clone using the
   README; manually check routes, reference layouts, long titles, empty data,
   error handling, deletion, multiple tabs, and the schema import in MySQL
   Workbench. Record the deployed demo video,
   add demo/video links, review Git history, and complete developer sign-off.
+  A fresh clone started with Docker by following the README.
+  `database/schema.sql` imported into MySQL 8.4 matches the Prisma-migrated
+  schema exactly (`mysqldump --no-data` diff). A scripted browser pass of the
+  README checklist against a local Docker stack passed 74/74 checks. Fixed the
+  warranty short date (now shows the year) and product count pluralization.
+  October 22, 2026: the demo video was published at
+  https://youtu.be/uCY2eS73gaU and linked in the README.

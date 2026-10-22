@@ -3,7 +3,7 @@
 A small inventory app built for the dZENcode Junior+ React.js assessment. You can browse incoming orders and their products, filter products by type, add a product to an order, and delete an order.
 
 - **Live demo:** https://dzencode-halimurka.online
-- **Demo video:** not published yet
+- **Demo video:** https://youtu.be/uCY2eS73gaU
 - **Original assignment:** [`task/`](task/) (PDF, example data, reference screenshots)
 
 Browsing is public. Adding products and deleting orders require a login (see [Login](#login)).
