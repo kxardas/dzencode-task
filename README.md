@@ -1,484 +1,463 @@
 # Orders & Products
 
-A full-stack inventory management application developed for the dZENcode
-Junior+ React.js technical assessment.
+A small inventory app built for the dZENcode Junior+ React.js assessment. You can browse incoming orders and their products, filter products by type, add a product to an order, and delete an order.
 
-## Current status
+- **Live demo:** https://dzencode-halimurka.online
+- **Demo video:** not published yet
+- **Original assignment:** [`task/`](task/) (PDF, example data, reference screenshots)
 
-The database foundation is implemented: MySQL, Prisma models and migrations,
-development seed data, and a NestJS Prisma module with connection lifecycle
-management. `GET /api/orders` returns order summaries with product counts and
-decimal totals in USD/UAH. `GET /api/orders/:id` returns one order with its
-associated products. `DELETE /api/orders/:id` deletes the order and its
-products. Products list, type filtering, and detail endpoints are implemented.
-The frontend has a shared header/sidebar layout. Orders and Products server-render
-real inventory and initialize RTK Query for subsequent updates, with loading,
-empty, error, and retry states. Products displays
-all inventory with type filtering, warranty dates, USD/UAH prices, and associated
-order titles. Selecting an order opens a closable panel with its products.
-Order deletion requires confirmation, handles pending/error states, updates the
-cached list, and closes the deleted order's panel. A validated create-product
-form is available within a selected order's panel. The shared header displays
-the browser's local date/time and a server-maintained active-tab counter.
-The header offers Russian/Ukrainian UI languages and remembers the choice locally.
-Products includes expandable statistics with product counts by type, using the
-same inventory cache. Its chart component loads on demand when opened.
-An expandable demo office map below the page content loads on demand, with
-a marker, localized address, and an external map link available if loading fails.
-JWT login/logout is implemented: viewing inventory is public; adding products
-and deleting orders require the evaluator session.
+Browsing is public. Adding products and deleting orders require a login (see [Login](#login)).
 
-The frontend root redirects to `/orders`; `/products` is available through
-the menu. Orders shows names, counts, dates, and totals from the API. The API connects to MySQL
-on startup. Open `/api/orders` for JSON data; the bare `/api` path returns 404.
+## Contents
 
-See [TODO.md](TODO.md) for progress. The API sections below document dates,
-currencies, validation, and cascading deletion; the storage model is in
-`apps/api/prisma/schema.prisma`.
+1. [Quick start with Docker](#quick-start-with-docker) (recommended for QA)
+2. [Demo data](#demo-data)
+3. [Login](#login)
+4. [Manual test checklist](#manual-test-checklist)
+5. [Running without Docker](#running-without-docker)
+6. [Automated tests](#automated-tests)
+7. [API](#api)
+8. [Active sessions (WebSocket)](#active-sessions-websocket)
+9. [Environment variables](#environment-variables)
+10. [Database and migrations](#database-and-migrations)
+11. [How the project is organized](#how-the-project-is-organized)
+12. [Deployment](#deployment)
+13. [Troubleshooting](#troubleshooting)
+14. [Known limitations](#known-limitations)
 
-## Technology stack
+## Quick start with Docker
 
-- **Frontend:** Next.js App Router, React, TypeScript, Redux Toolkit/RTK Query.
-  Socket.io Client receives live session counts. Bootstrap 5,
-  SCSS with BEM, and Lucide React are used by the shared frontend layout.
-  React Leaflet displays the demo office map using OpenStreetMap tiles.
-- **Backend:** NestJS with ESM and TypeScript, Prisma 7.10.0 and its MySQL driver
-  adapter, DTO validation, and a Socket.io gateway for active sessions.
-- **Database:** MySQL 8.4.11, Prisma migrations, and decimal monetary columns.
-- **Testing:** Backend Vitest unit tests, MySQL integration tests, and real
-  Socket.io client tests. Frontend Vitest and React Testing Library tests use
-  mocked fetch responses and socket events.
-- **Infrastructure:** Docker Compose runs MySQL locally. Web/API containers
-  and production deployment are planned.
+This is the shortest way to get the whole thing running: MySQL, the API and the web app, each in its own container. You don't need Node.js on your machine for this.
 
-## Repository structure
+You need Git, Docker with Compose v2 (Docker Desktop is fine), and free ports **3000**, **3001** and **3306** on localhost.
 
-```text
-apps/
-  web/                  Next.js frontend
-  api/
-    prisma/             Schema and migrations
-    src/prisma/         NestJS module, service, adapter, and development seed
-    scripts/            MySQL schema export
-    test/               Database integration tests
-    prisma.config.ts    CLI connection and migration configuration
-database/              MySQL image setup and Workbench schema.sql
-task/                  Original assignment, example data, and UI references
-TODO.md                Development and delivery checklist
-.nvmrc                 Pinned Node.js version
-docker-compose.yml     Local MySQL service
-```
-
-Each application has its own npm manifest and lockfile. Run commands inside
-that application or use `npm --prefix` as below, from the repository root.
-
-## Prerequisites
-
-- Node.js **26.7.0**, pinned in `.nvmrc` and used for verification.
-- npm **11.19.0**, declared in the application manifests.
-- Git.
-- Docker with Docker Compose and a running Docker engine.
-- Local ports 3000 (frontend), 3001 (API), and 3306 (MySQL) available.
-
-If using nvm, select the pinned version from the repository root:
-
-```bash
-nvm install
-nvm use
-```
-
-## Local development from scratch
-
-Clone the repository, install dependencies, and copy the example configuration.
-Copy the examples only during initial setup; preserve any existing local values.
+**1. Clone the repository and create the root `.env`:**
 
 ```bash
 git clone https://github.com/kxardas/dzencode-task.git
 cd dzencode-task
+cp .env.example .env
+```
+
+The defaults in `.env` are fine for a local run. If one of the ports is taken, change `WEB_PORT`, `API_PORT` or `MYSQL_PORT` there.
+
+**2. Generate login credentials for the Docker setup.** This is needed only once. The API refuses to start without them.
+
+```bash
+mkdir -p .docker
+docker compose build api
+docker compose run --rm --no-deps \
+  --user "$(id -u):$(id -g)" \
+  --entrypoint node \
+  --volume "$PWD/.docker:/setup" \
+  api scripts/setup-auth.mjs /setup
+```
+
+You should see `Authentication configured.` Two private files appear in `.docker/`: `.env` (secrets for the API) and `.auth-local.json` (username and password for you). Both are ignored by Git.
+
+**3. Start everything:**
+
+```bash
+docker compose up -d --build --wait --wait-timeout 180
+```
+
+The first build takes a few minutes. The command returns once all three containers report `Healthy`. Database migrations are applied automatically when the API starts.
+
+**4. Load demo data.** The database starts empty. To fill it with test orders and products:
+
+```bash
+docker compose exec api npx prisma db seed
+```
+
+Running it again is safe: it only adds missing rows and never overwrites or deletes anything.
+
+**5. Open the app:** http://localhost:3000. It redirects to the Orders page. The API is at http://localhost:3001/api (try http://localhost:3001/api/orders).
+
+### Everyday Docker commands
+
+| What you want | Command |
+| --- | --- |
+| See container status | `docker compose ps` |
+| Follow logs | `docker compose logs -f web api` |
+| Stop, keep data | `docker compose down` |
+| Start again | `docker compose up -d --wait` |
+| Rebuild after pulling new code | `docker compose up -d --build --wait` |
+| Wipe the database and start clean | `docker compose down -v`, then steps 3–4 |
+
+`docker compose down -v` deletes the MySQL volume, so all orders and products are gone. Your credentials in `.docker/` stay, so step 2 is not needed again.
+
+## Demo data
+
+After seeding, the database contains 4 orders and 6 products. This is what you should see in the UI and API:
+
+| ID | Order | Products | Total USD | Total UAH |
+| --- | --- | --- | --- | --- |
+| 1 | Office monitors delivery | 2 | 649.94 | 26 650.75 |
+| 2 | Peripherals and accessories | 2 | 40.00 | 1 640.00 |
+| 3 | Pending delivery | 0 | 0.00 | 0.00 |
+| 4 | Additional equipment for the second office and remote workstations | 2 | 108.99 | 4 468.59 |
+
+- Order 3 is intentionally empty, for checking empty states.
+- Order 4 has a long title, for checking layout and wrapping.
+- Product types: `Monitors` (2), `Keyboards` (2), `Accessories` (2).
+- Product IDs are 1001–1006.
+- The lists are sorted newest first, so order 4 is at the top.
+
+## Login
+
+Credentials are generated per environment and are never committed.
+
+- **Docker:** `.docker/.auth-local.json`
+- **Without Docker:** `apps/api/.auth-local.json`
+- **Live demo:** credentials are sent to the evaluator privately.
+
+The username is `evaluator` unless you changed `DEMO_USERNAME`. Sign in at http://localhost:3000/login or with the **Вход** button in the header.
+
+There is a single account and no registration. A login lasts 15 minutes. When it expires, the next change shows a message asking you to log in again, and whatever you typed into the form is kept.
+
+## Manual test checklist
+
+The UI is in Russian by default. Labels below are given in Russian, as they appear on screen. Use the demo data above as the expected values.
+
+### Layout and navigation
+
+- [ ] `/` redirects to `/orders`.
+- [ ] The left menu has **Приходы** (Orders) and **Продукты** (Products). The current page is highlighted.
+- [ ] Switching pages doesn't reload the browser. The header clock keeps ticking without resetting, and the page content fades in.
+- [ ] Below 768px the menu becomes a horizontal bar at the top. Nothing overflows horizontally at 320px.
+
+### Header
+
+- [ ] The date and time update every second, in your computer's time zone.
+- [ ] The tab counter shows `1` with one tab open.
+- [ ] Open a second tab: both tabs show `2` within a second or two.
+- [ ] Refresh one tab: the count goes back to `2`, not `3`.
+- [ ] Close one tab: the other shows `1`.
+- [ ] Stop the API (`docker compose stop api`): the counter shows a dash and a reconnecting status. Start it again (`docker compose start api`): the count comes back.
+
+### Orders (`/orders`)
+
+- [ ] Each row shows the title, the number of products, the date in two formats (`12.10` and `12 окт. 2026 г.`), and the total in USD and UAH.
+- [ ] Totals match the [demo data](#demo-data) table.
+- [ ] Clicking an order opens a details panel next to the list (below it on narrow screens) with that order's products only.
+- [ ] Order 3 opens with the message that it has no products.
+- [ ] The **×** button closes the panel. Clicking another order switches the panel to that order.
+
+### Deleting an order (requires login)
+
+- [ ] When logged out, the delete buttons are disabled and there is a link asking you to sign in.
+- [ ] After logging in, the trash button opens a dialog with the order title and a warning that its products will be deleted too.
+- [ ] **Отмена**, the **×** button and the Esc key close the dialog. Nothing is deleted.
+- [ ] **Удалить** removes the order. If its panel was open, the panel closes.
+- [ ] The order's products also disappear from the Products page. This is intentional: deletion cascades to products.
+
+### Adding a product (requires login)
+
+Open an order and click **Добавить продукт**.
+
+- [ ] Submitting the empty form shows an error under each required field. Nothing is sent.
+- [ ] A warranty end date earlier than the start date is rejected.
+- [ ] Prices accept up to two decimal places. Both `10.5` and `10,5` work. `1.999`, `-1` and `abc` are rejected.
+- [ ] Description is optional and is the only optional field.
+- [ ] After a successful save, the product appears in the panel, the order's product count and totals update, and the product shows up on the Products page.
+
+The API checks the same rules, so you can't get around them with a direct request (see [API](#api)).
+
+### Products (`/products`)
+
+- [ ] Each row shows the title, type, warranty dates in two formats, the price in USD and UAH, and the order it belongs to.
+- [ ] The **Тип продукта** select filters the list. **Все типы** shows everything again.
+- [ ] Empty result: the select only lists existing types, so this takes two tabs. In tab A, filter by `Monitors`. In tab B, log in and delete order 1. Switch back to tab A. The list refreshes and shows the empty-state message.
+- [ ] **Статистика инвентаря** expands a bar chart of products by type. It always counts all products, so filtering the list doesn't change it.
+
+### Language
+
+- [ ] The select in the header switches between RU and UK. Labels, dates and number formats change. Data from the database (titles, types) stays as entered.
+- [ ] Switching language keeps the open order, the active filter and anything typed into the form.
+- [ ] After a page refresh, the chosen language is restored. Russian may flash for a moment first. This is expected, because the server always renders Russian.
+
+### Office map
+
+- [ ] At the bottom of each page, **Показать карту** opens an interactive map with a marker. The address and the OpenStreetMap link are visible even before opening it.
+- [ ] The location is labelled as demo data. It is not the company's address.
+- [ ] The map needs internet access for tiles. Offline, the map shows an error and a retry button, and the address remains visible.
+
+### Login and logout
+
+- [ ] A wrong password shows a generic error. It doesn't say which field was wrong.
+- [ ] After logging in, the header shows the username and a **Выйти** button.
+- [ ] After logout, the delete and add buttons are disabled again.
+
+## Running without Docker
+
+Use this if you want to run the apps directly, for example with hot reload. MySQL still runs in Docker.
+
+You need Node.js **26.7.0** and npm **11.19.0** (pinned in `.nvmrc`; with nvm, run `nvm install && nvm use`), plus Docker for MySQL. If the Docker stack from the previous section is running, stop it first (`docker compose down`), because both use the same ports.
+
+```bash
+# 1. Install dependencies and create local config files
 npm --prefix apps/web ci
 npm --prefix apps/api ci
 cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
+
+# 2. Generate local login credentials (written to apps/api/.env and apps/api/.auth-local.json)
 npm --prefix apps/api run auth:setup
-```
 
-Start MySQL, apply committed migrations, and insert optional demo data:
-
-```bash
+# 3. Start MySQL, apply migrations, add demo data
 docker compose up -d --build --wait --wait-timeout 180 mysql
 npm --prefix apps/api run db:deploy
 npm --prefix apps/api run db:seed
 ```
 
-The seed inserts four orders and six products of three types. Order 3 is empty.
-Repeating the seed does not duplicate, delete, or overwrite existing rows.
-Skip seeding if you need an empty database.
-
-Start the API and frontend in separate terminals:
+Then start the API and the web app in two separate terminals:
 
 ```bash
 npm --prefix apps/api run start:dev
 ```
 
-The API watcher writes to `apps/api/build/`; production builds and HTTP tests
-use `apps/api/dist/`. A production build therefore does not clear the running
-dev server's compiled files.
-
 ```bash
 npm --prefix apps/web run dev
 ```
 
-Open http://localhost:3000 to view order summaries fetched from the API. Use the menu
-to switch to Products without a full-page reload. The shared layout adapts
-to mobile screens. Order panels show product titles, serial numbers, placeholder
-icons, and new/used condition. Products offers a type select with a reset option,
-loading/error handling, and empty results. The header shows the local date/time
-and active connected tabs.
-The API listens on http://localhost:3001 with the `/api` prefix. Open
-http://localhost:3001/api/orders to view order summaries. The bare `/api` path
-and other unimplemented routes return 404. CORS uses `FRONTEND_URL`.
+Open http://localhost:3000.
 
-Orders and Products fetch initial inventory on the Next.js server for each request and
-includes it in streamed HTML. The browser initializes the RTK Query cache from
-that data without repeating the initial list request. Later mutations and
-refreshes still use RTK Query. Existing client data takes precedence over reused
-route payloads. If the server-side API request fails, client fetching and retry
-remain available. Product type filtering and selected order details load in the browser.
-Successful inventory mutations also prevent an older prefetched Products payload
-from overwriting current data, including on the first visit to Products.
+Only copy the `.env.example` files the first time. Copying them again overwrites your local values, including the generated login secret.
 
-## Orders API
+## Automated tests
+
+Run these from the repository root after `npm ci` in both apps.
 
 ```bash
-curl http://localhost:3001/api/orders
-```
-
-The response is `{ "data": [...] }`, ordered by creation date descending,
-then ID descending when dates match. Each summary contains an ID, title,
-description, UTC creation date, product count, and total value in each currency.
-For example, the first seeded order appears in the array as:
-
-```json
-{
-  "id": 1,
-  "title": "Office monitors delivery",
-  "description": "Displays for the development team.",
-  "createdAt": "2026-10-01T09:00:00.000Z",
-  "productCount": 2,
-  "totalUSD": "649.94",
-  "totalUAH": "26650.75"
-}
-```
-
-Prices are decimal strings with two fractional digits. Empty orders have
-zero products and totals of `"0.00"`; no orders returns `{ "data": [] }`.
-
-To retrieve one order and its products:
-
-```bash
-curl http://localhost:3001/api/orders/1
-```
-
-The response is `{ "data": { ...summary, "products": [...] } }`. Products
-include their IDs, order ID, title, type, serial number, new/used flag,
-nullable photo URL, specification, warranty dates, both prices, and creation
-date. Dates use UTC ISO strings and prices have two fractional digits.
-Products are sorted by creation date descending, then ID descending.
-An empty order returns `products: []` with zero counts and totals.
-A missing order returns 404. The ID must be an integer between 1 and
-4294967295 (the database's unsigned integer range); invalid IDs return 400.
-
-`DELETE /api/orders/:id` removes an order and all its associated products.
-This write requires an authenticated cookie and trusted Origin/custom header;
-see [authentication and evaluator access](#authentication-and-evaluator-access).
-Successful deletion returns `204 No Content` with no response body. Other
-orders and their products are preserved. A missing or already deleted order
-returns 404, and invalid IDs return 400. Database failures return a generic
-500 response without internal details.
-
-The frontend dialog explains that associated products will be deleted and
-sends DELETE only after confirmation. Pending requests disable dismissal and
-duplicate submissions. Errors keep the dialog open for retry. On success,
-the deleted order and its products are removed from cached lists, affected order
-and product queries are invalidated, and its selected panel closes. Other selected
-orders remain open.
-
-## Products API
-
-```bash
-curl http://localhost:3001/api/products
-curl 'http://localhost:3001/api/products?type=Monitors'
-curl http://localhost:3001/api/products/1001
-```
-
-List responses use `{ "data": [...] }`; a detail response uses
-`{ "data": { ...product } }`. Each product includes all fields described
-above and `order: { id, title }` identifying its associated order. Prices are
-decimal strings with two fractional digits and dates are UTC ISO strings.
-Lists sort by creation date descending, then ID descending.
-
-Omitting `type`, or passing an empty/whitespace-only value, returns all
-products. Filter values are trimmed and matched as whole type values, not
-substrings. Matching follows MySQL's `utf8mb4_unicode_ci` collation, which is
-case/accent insensitive. An unknown type or empty database returns `data: []`.
-The type must be one string of at most 100 characters; repeated type values
-and unsupported query parameters return 400. Invalid IDs return 400 and
-missing products return 404. Deleted orders' products disappear from these
-endpoints through the existing cascade policy.
-
-`POST /api/products` creates a product for an existing order. Replace `orderId`
-below with an existing order ID. This write also requires an authenticated cookie
-and trusted Origin/custom header; see [authentication](#authentication-and-evaluator-access).
-
-```bash
-curl -X POST http://localhost:3001/api/products \
-  -H 'Content-Type: application/json' \
-  -d '{"orderId":1,"title":"Office monitor","type":"Monitors","serialNumber":"MON-NEW","isNew":true,"warrantyStart":"2026-10-01","warrantyEnd":"2028-10-01","priceUSD":"149.95","priceUAH":"6150.25","specification":"Full HD"}'
-```
-
-Success returns 201 with `{ "data": ...product }`. Invalid fields, extra
-properties, reversed/invalid dates, negative prices, and prices outside
-`DECIMAL(12,2)` return 400. Money inputs must be decimal strings. Warranty
-inputs use `YYYY-MM-DD` and are stored at UTC midnight. A missing order returns
-404; unexpected database failures return a safe 500 response. Serial numbers
-are not unique. Titles are limited to 255 characters; type and serial number
-to 100 each. Specification is optional, at most 10000 characters. Optional
-`isNew` defaults to true; optional `photo` accepts an HTTP(S) URL up to 2048
-characters or null. Unknown properties are rejected.
-
-In the browser, select an order and click "Добавить продукт". The form validates
-fields, preserves values after failure, blocks duplicate submissions while
-saving, and refreshes product lists, the order's products, count, and totals
-after success. Images remain placeholders; image upload is not implemented.
-
-## Clock and active sessions
-
-The header uses Russian date/time formatting in the browser's local time zone.
-It updates once per second, including the date at midnight. A placeholder is
-rendered on the server and until the first timer tick to keep hydration consistent.
-Inventory creation/warranty dates still use UTC as described above.
-
-Socket.io connects to `NEXT_PUBLIC_SOCKET_URL` (default `http://localhost:3001`),
-using the default `/socket.io` transport path and root namespace. Do not append
-`/api` to this URL. The API broadcasts `sessions:count` with `{ "count": 2 }`
-whenever a connection is added or removed; a newly connected tab receives the
-current total as well. Each connected tab counts once, independent of its route.
-
-The gateway keeps socket IDs in memory for one backend instance. This counts
-connections, not unique users. Closing/unmounting a tab disconnects its socket;
-silent network failures are eventually removed by Socket.io's default heartbeat
-(25-second ping interval and 20-second timeout). Refreshes can briefly overlap
-connections but do not leave permanent duplicates. The client reconnects after
-temporary transport failures and receives a fresh count. Until a count arrives,
-or while disconnected, the UI shows a dash with a connection status instead of
-a stale number. The counter is shared across route navigation; listeners and
-connections are cleaned up on unmount.
-
-To check manually, open two tabs and verify the total increases; close one and
-verify it decreases. Refresh a tab and switch between Orders/Products, then
-restart the API and confirm the counter recovers without accumulating sessions.
-
-## Interface language
-
-Use the RU/UK select in the header to switch between Russian and Ukrainian.
-Russian is the default. Navigation, inventory labels, forms and validation,
-loading/error/empty states, accessible labels, page titles/descriptions, dates,
-and price formatting follow the selected language. Inventory titles, types, and
-other stored user data retain their original text.
-
-The preference is stored as `inventory.locale` in browser `localStorage`, using
-`ru` or `uk`. It survives reloads and synchronizes across tabs of the same origin.
-Missing, invalid, or inaccessible storage falls back to Russian; switching still
-works for the current session if saving is blocked. Only this non-sensitive UI
-preference is stored there.
-
-The server always renders Russian inventory HTML. Hydration starts in Russian
-and then restores the saved language, avoiding server/client markup mismatches.
-Consequently a saved Ukrainian preference can briefly show Russian on a fresh
-load. Switching languages preserves the selected order, product filter, current
-form values and validation feedback, inventory cache, and socket connection.
-It does not reload the page or translate stored inventory data.
-
-## Authentication and evaluator access
-
-Run `npm --prefix apps/api run auth:setup` once after initial environment setup.
-It generates a local random password and signing secret without replacing an
-existing configuration. Read ignored `apps/api/.auth-local.json` for local
-evaluator credentials, then open `/login`. Keep this file private and out of Git.
-The API stores a salted scrypt password hash in its ignored `.env`.
-
-Login issues a fifteen-minute HttpOnly JWT cookie. Logout clears the browser
-cookie; the stateless API does not revoke copied tokens before expiry. Inventory
-reads remain public. Changes require authentication and CSRF-protected writes;
-tokens and credentials are not saved in Web Storage.
-
-`POST /api/auth/login` accepts `{ "username": "...", "password": "..." }`
-and returns `{ "data": { "user": { "username": "..." } } }` with the cookie.
-`GET /api/auth/session` returns that public user summary or `user: null`.
-`POST /api/auth/logout` clears the cookie and returns 204. Auth responses use
-`Cache-Control: no-store`. Wrong credentials return a generic 401.
-
-Writes require `Origin` matching `FRONTEND_URL` exactly and
-`X-Inventory-Request: 1`. Browser fetches use `credentials: "include"`.
-The cookie is host-only, HttpOnly, SameSite=Lax, Path=/api, and Secure in
-production. JWTs expire after fifteen minutes; there is no session registry,
-login limiter, or refresh-token flow. API restarts do not invalidate tokens.
-
-Production requires HTTPS and same-site web/API hosting, preferably a reverse
-proxy with `/api` on the frontend origin. Configure private production secrets
-and provide evaluator access privately. Never publish the local access file.
-
-## Environment variables
-
-Root `.env.example` configures the MySQL container. `apps/api/.env.example`
-configures Prisma CLI, seed, and API runtime. Keep credentials, database names,
-and ports consistent between the two files. Examples are for local development;
-local `.env` files are ignored by Git.
-
-| File | Variable | Role |
-| --- | --- | --- |
-| Root `.env` | `MYSQL_DATABASE`, `MYSQL_USER` | Application database and user |
-| Root `.env` | `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` | Local container credentials |
-| Root `.env` | `MYSQL_PORT` | Host port; defaults to 3306, bound to 127.0.0.1 |
-| API `.env` | `DATABASE_URL` | Application database connection |
-| API `.env` | `SHADOW_DATABASE_URL` | Separate database used by development migrations |
-| API `.env` | `PORT` | API port; defaults to 3001 |
-| API `.env` | `FRONTEND_URL` | Allowed CORS origin |
-| API `.env` | `JWT_SECRET` | Required private JWT signing secret; generated locally by `auth:setup` |
-| API `.env` | `DEMO_USERNAME`, `DEMO_PASSWORD_HASH` | Required evaluator account and salted password hash |
-| API environment | `NODE_ENV` | Use `production` with HTTPS for Secure authentication cookies |
-| Web `.env.local` | `NEXT_PUBLIC_API_URL` | REST API URL including `/api`; defaults to `http://localhost:3001/api` |
-| Web `.env.local` | `API_URL` | Optional server-only REST base URL including `/api`; falls back to `NEXT_PUBLIC_API_URL`, then localhost |
-| Web `.env.local` | `NEXT_PUBLIC_SOCKET_URL` | Socket.io server origin without `/api`; defaults to `http://localhost:3001` |
-
-Prisma CLI and the API load `apps/api/.env` without overriding process variables.
-The frontend loads `.env.local`; restart it after changing URLs and
-set production values before building. Percent-encode special characters in
-connection-URL credentials. Runtime URL query options are not supported yet.
-
-Changing `MYSQL_PORT` also requires updating both API connection URLs.
-The development image initializes `${MYSQL_DATABASE}_shadow` with scoped user
-privileges on first startup. Never use the application database as the shadow
-because Prisma Migrate recreates its schema. Initialization only runs on an
-empty volume. To initialize the shadow database on an existing local volume:
-
-```bash
-docker compose exec -T mysql sh /docker-entrypoint-initdb.d/init-shadow.sh
-```
-
-## Database workflow
-
-```bash
-# Validate the schema or regenerate the client
-npm --prefix apps/api run db:validate
-npm --prefix apps/api run db:generate
-
-# Create and apply a new development migration
-npm --prefix apps/api run db:migrate -- --name describe_the_change
-
-# Apply committed migrations without generating new ones
-npm --prefix apps/api run db:deploy
-npm --prefix apps/api run db:status
-
-# Insert missing demo records or inspect the database
-npm --prefix apps/api run db:seed
-npm --prefix apps/api run db:studio
-
-# Regenerate the reference SQL after migration changes
-npm --prefix apps/api run db:schema:export
-```
-
-Commit migration files together with their schema changes. Generated client
-files under `apps/api/src/generated/` are ignored and recreated before builds,
-startup in development, and tests. Builds do not require a live database.
-
-`database/schema.sql` is the reference schema for MySQL Workbench. Use
-**File > Import > Reverse Engineer MySQL Create Script** to inspect its model
-([Workbench guide](https://dev.mysql.com/doc/workbench/en/wb-reverse-engineer-create-script.html)),
-or execute it against an empty reference database. It includes foreign keys,
-indexes, decimal fields, and custom CHECK constraints. Use Prisma migrations
-for the application's actual database setup, rather than importing this file.
-
-Deleting an order deletes its associated products through `ON DELETE CASCADE`.
-Deleting other orders does not affect those products. Prices are stored
-independently in USD/UAH; UAH is the primary display currency. Dates use UTC.
-
-## Checks and production builds
-
-```bash
-npm --prefix apps/web run lint
+# Frontend: unit and component tests (no API or database needed)
 npm --prefix apps/web test
-npm --prefix apps/web run build
-npm --prefix apps/api run db:validate
-npm --prefix apps/api run lint
+
+# Backend: unit tests (no database needed)
 npm --prefix apps/api test
+
+# Backend: integration tests against real MySQL and Socket.io
+npm --prefix apps/api run test:e2e
+
+# Linters and production builds
+npm --prefix apps/web run lint
+npm --prefix apps/api run lint
+npm --prefix apps/web run build
 npm --prefix apps/api run build
 ```
 
-Database integration tests require a running, migrated MySQL database:
+`test:e2e` needs MySQL running with migrations applied (step 3 of [Running without Docker](#running-without-docker)). It uses the database from `apps/api/.env`, and every write is rolled back, so your data is not changed. The only side effect is that auto-increment IDs may skip a few numbers.
+
+What the tests cover, roughly:
+
+- **Web:** order totals and counts, selecting an order, the details panel, delete confirmation and cancellation, product filtering and empty results, form validation, error and retry states, the clock and session counter, language switching, login, SSR hydration, the chart and the map.
+- **API:** order and product endpoints, filtering, validation, cascading deletion, 400/404 handling, safe 500 responses, authentication, and session counting with real Socket.io clients.
+
+## API
+
+Base URL: `http://localhost:3001/api`. Every successful response wraps its payload in `data`. The two exceptions are delete and logout, which return `204` with an empty body.
+
+| Method | Path | What it does | Login |
+| --- | --- | --- | --- |
+| `GET` | `/orders` | All orders with product count and totals | no |
+| `GET` | `/orders/:id` | One order with its products | no |
+| `DELETE` | `/orders/:id` | Delete an order and its products | yes |
+| `GET` | `/products` | All products, each with `order: { id, title }` | no |
+| `GET` | `/products?type=Monitors` | Products of one type | no |
+| `GET` | `/products/:id` | One product | no |
+| `POST` | `/products` | Add a product to an order | yes |
+| `POST` | `/auth/login` | Log in, sets a cookie | no |
+| `GET` | `/auth/session` | Current user, or `user: null` | no |
+| `POST` | `/auth/logout` | Clear the cookie | no |
+
+Things worth knowing when testing the API by hand:
+
+- Prices are strings with two decimals (`"649.94"`). Dates are UTC ISO strings.
+- An invalid ID (`/orders/abc`, `/orders/0`) returns `400`. A missing record returns `404`. Deleting the same order twice gives `204`, then `404`.
+- `?type=` matches the whole type name and ignores case (`monitors` works, `Monit` doesn't). An empty `type` returns all products.
+- Unknown fields in a `POST` body are rejected with `400`.
+
+### Calling protected endpoints with curl
+
+Login, logout, product creation and order deletion only accept requests that look like they come from the web app. Without these two headers, you get `403 Untrusted write request`:
+
+- `Origin: http://localhost:3000` (must match `FRONTEND_URL` exactly)
+- `X-Inventory-Request: 1`
+
+Example session (with the Docker setup, credentials are in `.docker/.auth-local.json`):
 
 ```bash
-npm --prefix apps/api run test:e2e
+H=(-H 'Origin: http://localhost:3000' -H 'X-Inventory-Request: 1')
+
+# Log in and store the cookie in cookies.txt
+curl -c cookies.txt "${H[@]}" -H 'Content-Type: application/json' \
+  -X POST http://localhost:3001/api/auth/login \
+  -d '{"username":"evaluator","password":"<password from .auth-local.json>"}'
+
+# Add a product to order 3
+curl -b cookies.txt "${H[@]}" -H 'Content-Type: application/json' \
+  -X POST http://localhost:3001/api/products \
+  -d '{"orderId":3,"title":"Test monitor","type":"Monitors","serialNumber":"QA-001","isNew":true,"warrantyStart":"2026-10-01","warrantyEnd":"2028-10-01","priceUSD":"149.95","priceUAH":"6150.25","specification":"Full HD"}'
+
+# Delete order 3 together with its products
+curl -b cookies.txt "${H[@]}" -X DELETE http://localhost:3001/api/orders/3
 ```
 
-HTTP and Socket.io integration tests build and exercise the compiled NestJS modules.
-Socket tests use an isolated server with two clients over polling and WebSocket,
-covering count broadcasts, closing, refreshing, and automatic reconnection.
-Integration-test writes are rolled back; fixture records are not deleted.
-MySQL auto-increment counters can advance during rolled-back tests.
+`POST /products` fields:
 
-For deployment, configure production authentication settings and an HTTPS
-`FRONTEND_URL` before starting the applications in separate terminals.
-The API production launcher enforces production mode and Secure cookies;
-use `start:dev` for local HTTP development.
+| Field | Rules |
+| --- | --- |
+| `orderId` | ID of an existing order (`404` otherwise) |
+| `title` | required, up to 255 characters |
+| `type`, `serialNumber` | required, up to 100 characters. Serial numbers don't have to be unique. |
+| `warrantyStart`, `warrantyEnd` | `YYYY-MM-DD`; the end can't be before the start |
+| `priceUSD`, `priceUAH` | decimal strings, `0` to `9999999999.99`, at most two decimals |
+| `isNew` | optional boolean, defaults to `true` |
+| `specification` | optional, up to 10 000 characters |
+| `photo` | optional `http(s)` URL or `null`. There is no upload in the UI. |
+
+## Active sessions (WebSocket)
+
+The number in the header is the count of browser tabs currently connected to the API over Socket.io. It's not a count of users: two tabs from the same person count as two.
+
+- The server keeps the list of connected sockets in memory and sends `sessions:count` with `{ "count": n }` to every client whenever someone connects or disconnects.
+- Closing a tab disconnects immediately. If a client disappears without closing the connection (network drop, sleeping laptop), Socket.io notices it within about 45 seconds and removes it.
+- A refresh can briefly show one extra session, but it doesn't add up over time.
+- The browser reconnects automatically after the API restarts.
+
+Because the count lives in the API process memory, it resets when the API restarts and only works with a single API instance.
+
+## Environment variables
+
+There are three config files. Each has a committed `.example` next to it.
+
+**Root `.env`** (used by Docker Compose)
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `MYSQL_DATABASE` | `orders_products` | Database name |
+| `MYSQL_USER`, `MYSQL_PASSWORD` | `app` / `app_password` | Application DB user |
+| `MYSQL_ROOT_PASSWORD` | `root_password` | MySQL root password |
+| `MYSQL_PORT` | `3306` | MySQL port on localhost |
+| `WEB_PORT`, `API_PORT` | `3000`, `3001` | Ports for the Docker web and API containers |
+| `FRONTEND_URL` | commented out | Production only: public HTTPS address of the site |
+
+**`apps/api/.env`** (API without Docker)
+
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | API port, `3001` by default |
+| `DATABASE_URL` | MySQL connection string |
+| `SHADOW_DATABASE_URL` | Scratch database for creating new migrations. Only needed by `db:migrate`. |
+| `FRONTEND_URL` | Web app address. Used for CORS and the write-request check. |
+| `JWT_SECRET`, `DEMO_USERNAME`, `DEMO_PASSWORD_HASH` | Login settings, generated by `npm run auth:setup` |
+
+**`apps/web/.env.local`** (web app without Docker)
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | API address used by the browser, including `/api` |
+| `NEXT_PUBLIC_SOCKET_URL` | API address for Socket.io, without `/api` |
+| `API_URL` | Optional API address for server-side rendering. Falls back to `NEXT_PUBLIC_API_URL`. |
+
+If you change a port in the root `.env` and run without Docker, update the matching URLs in the other two files. Restart the web app after editing `.env.local`.
+
+## Database and migrations
+
+MySQL 8.4 with Prisma. The schema is in `apps/api/prisma/schema.prisma`, and migrations are in `apps/api/prisma/migrations/`.
+
+- One order has many products, and each product belongs to exactly one order.
+- Deleting an order deletes its products (`ON DELETE CASCADE`). The assignment doesn't say what should happen to them. Keeping products without an order would leave them with nothing to show in the "order" column, so cascading seemed the most sensible choice.
+- Prices are stored as `DECIMAL(12,2)` in both USD and UAH. Nothing is converted at runtime: both values are entered with the product, as in the example data. UAH is the main currency.
+- All dates are stored and returned in UTC.
+
+**MySQL Workbench:** the schema is in [`database/schema.sql`](database/schema.sql). Open it with *File → Import → Reverse Engineer MySQL Create Script*. It's generated from the migrations, so it matches the real database. To set up an actual database, use the migrations, not this file.
+
+Database commands (without Docker, from the repository root):
 
 ```bash
-npm --prefix apps/api run start:prod
+npm --prefix apps/api run db:deploy        # apply committed migrations
+npm --prefix apps/api run db:seed          # add demo data (safe to repeat)
+npm --prefix apps/api run db:status        # check which migrations are applied
+npm --prefix apps/api run db:studio        # browse the data in Prisma Studio
+npm --prefix apps/api run db:migrate -- --name add_something   # create a new migration (developers only)
+npm --prefix apps/api run db:schema:export # regenerate database/schema.sql
 ```
 
-```bash
-npm --prefix apps/web run start
+Field names differ slightly from `task/app.js`: `date` → `createdAt`, `order` → `orderId`, `guarantee.start/end` → `warrantyStart/End`, and the `price` array → `priceUSD` and `priceUAH`. The example's `isNew: 0/1` became a boolean.
+
+## How the project is organized
+
+```text
+apps/web/       Next.js frontend (see apps/web/README.md)
+apps/api/       NestJS API, Prisma schema and migrations (see apps/api/README.md)
+database/       MySQL image setup and the Workbench schema
+deploy/         Example reverse-proxy config for a server
+task/           The original assignment
 ```
 
-## Demo office map
+**Stack:** Next.js (App Router), React, TypeScript, Redux Toolkit with RTK Query, Bootstrap 5 with SCSS and BEM, Socket.io, NestJS, Prisma, MySQL, Vitest and React Testing Library, Docker Compose.
 
-The shared office section explicitly identifies its location as demo data,
-not the company's address. It uses the real Gulliver business centre in Kyiv,
-Sportyvna Square, 1-A (50.4387, 30.5232). The address is listed on the
-[business centre's website](https://gullivercenter.com/bc-gallery/pervaya-galereya-bc).
-Change coordinates, zoom, and both translated addresses together in
-`apps/web/src/features/office/office.config.ts`. No API key is required.
+A few decisions that are useful to know when testing:
 
-The map starts collapsed. Leaflet code and map tiles load only after opening it;
-the readable address and external OpenStreetMap link are always available.
-Tile failures show a localized error and retry action. If the map's JavaScript
-module fails to load, the address and external link remain usable; reload the
-page to retry downloading that module. Browser geolocation is not requested.
+- **SSR.** Orders and Products are rendered on the server with real data, so the data is already in the HTML ("View page source" shows it). After that, the page works as a normal SPA: navigation, filtering and updates happen in the browser through RTK Query.
+- **Auth.** The login is stored in an HttpOnly cookie, so JavaScript can't read it and it's never in `localStorage`. Only the language choice is stored there (`inventory.locale`).
+- **Lazy loading.** The chart and the map are loaded only when you open them. In DevTools → Network, their JS files appear only after you click.
+- **Form validation** runs in both places. The browser checks the form before sending, and the API checks again with DTOs.
 
-Tiles require browser HTTPS access to `tile.openstreetmap.org`. Keep visible
-OpenStreetMap attribution and the browser's normal Referer and cache behavior,
-following the [OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
-The public tile service has no availability guarantee. Do not add bulk downloads
-or offline prefetching; changing providers also requires updating attribution.
+## Deployment
 
-## Docker and remaining delivery
+The live demo runs on a single server with Docker Compose behind Caddy, which handles HTTPS.
 
-Compose currently provides the database only. Web and API run through npm;
-full application containers, deployment instructions, live demo/video links,
-and final delivery checks will be added in subsequent stages.
+To deploy on another server:
 
-The full Junior+ matrix is included in the delivery scope, as selected on
-October 16, 2026. TypeScript, unit tests, and inventory SSR for Orders and Products
-are implemented, together with Russian/Ukrainian i18n and a persisted language
-preference and JWT authentication for inventory mutations. Inventory charts,
-the demo office map, and meaningful lazy loading are also implemented and verified.
-Remaining CI, Docker, deployment, and submission checks are tracked in
-[TODO.md](TODO.md).
+1. Copy the project, create `.env` from `.env.example`, set **new** database passwords, and set `FRONTEND_URL` to the public HTTPS address (for example `FRONTEND_URL=https://inventory.example.com`, without a trailing slash).
+2. Generate fresh credentials with the same command as in [step 2](#quick-start-with-docker). Don't reuse local ones.
+3. Start with the production override, which turns on secure cookies and hides the MySQL port:
 
-MySQL data persists in a named volume. To stop the local database while
-preserving it:
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build --wait
+   ```
 
-```bash
-docker compose stop mysql
-```
+4. Point the reverse proxy at the containers: `/api/*` and `/socket.io/*` go to port 3001, everything else to port 3000. A ready-made Caddy example is in [`deploy/Caddyfile.example`](deploy/Caddyfile.example).
+
+To update, pull the new code and run the command from step 3 again. Keep `.env`, `.docker/` and the MySQL volume.
+
+## Troubleshooting
+
+**`docker compose up` fails with "Set MYSQL_USER in .env" or "Copy .env.example to .env".**
+You skipped `cp .env.example .env` in the repository root.
+
+**The `api` container keeps restarting or `--wait` times out.**
+Check `docker compose logs api`. Usually the credentials from [step 2](#quick-start-with-docker) are missing. Make sure `.docker/.env` exists.
+
+**`port is already allocated` or `EADDRINUSE`.**
+Something else is using 3000, 3001 or 3306, often a local MySQL or the other way of running the project. Stop it, or change the ports in `.env`.
+
+**The page loads but shows "Не удалось загрузить приходы".**
+The API isn't reachable. Check http://localhost:3001/api/orders directly. Without Docker, make sure `npm --prefix apps/api run start:dev` is running.
+
+**curl gets `403 Untrusted write request`.**
+Add the `Origin` and `X-Inventory-Request: 1` headers (see [curl examples](#calling-protected-endpoints-with-curl)).
+
+**curl gets `401` on a write after logging in.**
+The cookie expired (15 minutes) or wasn't sent. Log in again and pass `-b cookies.txt`.
+
+**`auth:setup` says "Local access file already exists".**
+It won't overwrite existing credentials on purpose. Use the password from the existing `.auth-local.json`. To start over, delete both `.auth-local.json` and the generated lines (`JWT_SECRET`, `DEMO_PASSWORD_HASH`) in the matching `.env`.
+
+**`db:migrate` complains about the shadow database on an older MySQL volume.**
+Create it once with `docker compose exec -T mysql sh /docker-entrypoint-initdb.d/init-shadow.sh`. This only matters when you create new migrations.
+
+**The map shows an error.**
+Map tiles come from `tile.openstreetmap.org`, which needs internet access. The rest of the app works offline.
+
+## Known limitations
+
+- Only one login account, with no registration or roles. Logging out clears the cookie, but a copied token stays valid until it expires (15 minutes). There is no limit on login attempts.
+- The session counter lives in the memory of one API process. It resets on restart and isn't shared between several API instances.
+- Product photos are placeholders. There is no image upload.
+- Data from the database (titles, types) isn't translated. Only the interface is.
+- On a fresh load with Ukrainian selected, Russian can flash for a moment before the saved language is applied.
+- Only orders can be deleted. Products can't be deleted or edited on their own. The reference screenshots show more controls (search, extra menu items, product deletion), but these aren't part of the written assignment.
+- The office map location is demo data in Kyiv, and the map depends on the public OpenStreetMap tile server.

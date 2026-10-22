@@ -1,119 +1,94 @@
-# Orders & Products — API
+# Orders & Products: API
 
-NestJS ESM backend with Prisma 7.10.0 and MySQL 8.4.11. The Prisma module
-connects on startup and disconnects during shutdown. `GET /api/orders`
-returns order summaries, product counts, and decimal totals in both currencies.
-`GET /api/orders/:id` returns one order with its associated product details;
-missing orders return 404 and invalid IDs return 400.
-`DELETE /api/orders/:id` deletes the order and its products and returns
-204 with no body. Other orders remain intact; missing or already deleted
-orders return 404, and invalid IDs return 400.
+NestJS backend with Prisma and MySQL. It serves the REST API under `/api` and the active-session counter over Socket.io on the same port (3001 by default).
 
-`GET /api/products` lists all products with `order: { id, title }`.
-`GET /api/products?type=Monitors` filters by the whole type value, following
-MySQL's case/accent insensitive collation. Blank filters show all products;
-unknown types return an empty array. `GET /api/products/:id` returns one
-product. Both routes serialize money and dates consistently with order
-details; invalid IDs/queries return 400 and missing products return 404.
+For setting up the whole project, demo data, login and the endpoint list, see the [root README](../../README.md). This file covers what you need when working on the API itself. Commands below run inside `apps/api`.
 
-`POST /api/products` creates a product for an existing order and returns 201
-with `{ data: product }`. DTO validation trims strings and checks field lengths,
-real warranty dates, decimal-string prices, boolean values, and unknown fields.
-The service checks warranty ordering and maps a missing parent order to 404.
-Dates are stored at UTC midnight; monetary inputs remain exact decimals.
-See the [Products API](../../README.md#products-api) for input constraints.
+## Running
 
-Follow the [root setup guide](../../README.md) to start MySQL and configure
-`apps/api/.env`. The commands below run inside `apps/api`.
-
-## Development
+MySQL should already be running and `.env` should exist (see [Running without Docker](../../README.md#running-without-docker)).
 
 ```bash
 npm ci
-npm run auth:setup
+npm run auth:setup   # first time only
 npm run db:deploy
-npm run db:seed
+npm run db:seed      # optional demo data
 npm run start:dev
 ```
 
-The API defaults to port 3001 and the `/api` prefix. It loads this directory's
-`.env`, reads `FRONTEND_URL` for CORS, and requires a working `DATABASE_URL`.
-Open http://localhost:3001/api/orders to inspect the JSON response. The bare
-`/api` path returns 404. Socket.io shares the HTTP port, using `/socket.io`
-and the root namespace. `SessionsModule` broadcasts `sessions:count` with
-`{ count: number }` on connection/disconnection. Each socket ID counts once;
-counts are kept in memory for one API instance. CORS uses `FRONTEND_URL`.
-No client messages or authentication are required for this public counter.
-See the [session behavior](../../README.md#clock-and-active-sessions).
+Check that it works: http://localhost:3001/api/orders should return JSON. The bare `/api` path returns 404, which is expected.
 
-## Database and checks
+The dev server compiles into `build/` and the production build into `dist/`. You can run `npm run build` or the integration tests while `start:dev` is running.
 
-```bash
-npm run db:validate
-npm run db:generate
-npm run db:migrate -- --name describe_the_change
-npm run db:status
-npm run db:schema:export
-npm run lint
-npm test
-npm run test:e2e
-npm run build
+## Scripts
+
+| Script | What it does |
+| --- | --- |
+| `start:dev` | Dev server with watch mode |
+| `build` | Generate the Prisma client and compile to `dist/` |
+| `start:prod` | Run `dist/` in production mode (requires an HTTPS `FRONTEND_URL`) |
+| `test` | Unit tests, no database needed |
+| `test:e2e` | Integration tests against MySQL from `.env`, plus Socket.io tests |
+| `lint` | oxlint |
+| `auth:setup` | Generate the login secret and password (see below) |
+| `db:deploy` | Apply committed migrations |
+| `db:migrate -- --name x` | Create a new migration (needs the shadow database) |
+| `db:seed` | Add demo data. It's additive, so existing rows are kept. |
+| `db:status`, `db:validate`, `db:studio` | Prisma helpers |
+| `db:schema:export` | Regenerate `database/schema.sql` from the migrations |
+
+## Code layout
+
+```text
+src/
+  orders/      GET list/detail, DELETE with cascade
+  products/    GET list/detail/filter, POST with DTO validation
+  sessions/    Socket.io gateway for the tab counter
+  auth/        login/logout/session, JWT cookie guard, write-origin guard
+  prisma/      PrismaService, MySQL adapter, seed script
+  config/      loads apps/api/.env
+test/          integration tests (real MySQL and Socket.io)
+prisma/        schema.prisma and migrations
+scripts/       auth setup, schema export, Docker entrypoint
 ```
 
-`db:migrate` requires the separate shadow database initialized by the local
-MySQL image. `db:deploy` applies existing migrations without creating new ones.
-`db:seed` builds and runs the additive development seed; existing rows are not
-overwritten. Build and test commands regenerate the ignored Prisma client.
-HTTP integration tests use compiled NestJS modules, so `test:e2e` builds first.
+Controllers only map HTTP to service calls. Calculations (order totals, serialization of money and dates) live in the services. Services throw `NotFoundException` and similar, and unexpected database errors become a generic 500 without internal details.
 
-Watch/debug mode uses `tsconfig.dev.json` and writes to `build/`, including its
-incremental compiler cache. Production builds and HTTP integration tests use
-`dist/`. These separate outputs allow `npm run build` to run without deleting
-files used by an active dev server. Both output directories are ignored by Git.
-`npm run start:prod` sets production mode through a small portable launcher and
-loads `dist/main.js`. It requires an HTTPS `FRONTEND_URL` and production credentials;
-use `start:dev` for local HTTP development.
+## Data rules
 
-Unit tests validate connection configuration, order-summary calculations,
-product serialization/creation, defaults, warranty ordering, and error handling.
-Integration tests verify the list route's JSON format, empty collections,
-stable ordering, order details, populated/empty order deletion, preservation
-of other orders and products, repeated deletion, ID validation, missing orders, and generic
-server errors, along with actual
-MySQL relationships, filtering, decimals, UTC dates, cascading deletion, foreign
-keys, and CHECK constraints. They require a running, migrated database and
-roll back test writes. Products HTTP tests cover filtering/reset, ordering,
-order associations, serialization, empty results, validation, errors, and
-the disappearance of products after cascading order deletion.
-Creation tests cover real MySQL writes and returned values, exact order totals,
-duplicate serial numbers, deleted-parent handling, invalid input, and safe
-server errors. Test-created records are rolled back. Session unit tests check
-count updates, duplicate/disconnection handling, and reconnecting socket IDs.
-Socket.io integration tests use real polling/WebSocket clients and an isolated
-Nest server without a database to verify connection, closure, refresh, and
-automatic reconnection.
-The current suite has 28 unit tests, 28 database/HTTP integration tests,
-and two Socket.io integration tests.
+- Money is `DECIMAL(12,2)` in MySQL and is sent as a string with two decimals (`"649.94"`). Totals are summed as decimals, not floats.
+- Dates are UTC ISO strings. Warranty dates from the form are stored at UTC midnight.
+- Deleting an order deletes its products through the foreign key cascade.
+- `?type=` is an exact match on the whole value, case-insensitive because of the `utf8mb4_unicode_ci` collation.
+- IDs must be integers from 1 to 4294967295 (unsigned INT). Anything else returns 400.
 
 ## Authentication
 
-Inventory reads and sockets are public. `POST /api/products` and
-`DELETE /api/orders/:id` require a valid JWT cookie plus the exact configured
-`Origin` and `X-Inventory-Request: 1`. A dedicated AuthModule owns login/session/
-logout endpoints, password verification, JWT validation, and guards.
+Reads and the socket are public. `POST /products` and `DELETE /orders/:id` need:
 
-Run `npm run auth:setup` once to generate private local settings and evaluator
-access in ignored `.auth-local.json`. Existing secrets are preserved. The API
-requires `JWT_SECRET`, `DEMO_USERNAME`, and `DEMO_PASSWORD_HASH` on startup.
-For production configure `NODE_ENV=production`, HTTPS, fresh credentials, and
-same-site web/API hosting. The cookie is HttpOnly, SameSite=Lax, fifteen minutes,
-and Secure in production. Logout clears the browser cookie. JWTs remain valid
-until expiry, including across API restarts; there is no server session registry.
-There is no registration, login limiter, or refresh-token flow.
+1. a valid JWT in the `inventory_session` HttpOnly cookie (set by `POST /auth/login`, valid for 15 minutes);
+2. an `Origin` header equal to `FRONTEND_URL`;
+3. the header `X-Inventory-Request: 1`.
 
-See [authentication and evaluator access](../../README.md#authentication-and-evaluator-access) for the
-request contract, password hashing, environment, and deployment constraints.
-Auth tests exercise valid/invalid login, cookie flags, actual expiry, protected
-writes, trusted write headers, cookie clearing, and stateless restart behavior.
+Login and logout also check 2 and 3. The two headers act as simple CSRF protection: a foreign site can't send a custom header without a CORS preflight, and CORS only allows `FRONTEND_URL`.
 
-The storage model is in `prisma/schema.prisma`; API contracts are in the root README.
+`npm run auth:setup` creates a random password, stores its scrypt hash and a `JWT_SECRET` in `.env`, and writes the plain username and password to `.auth-local.json` (ignored by Git). It never overwrites existing credentials. The API won't start without `JWT_SECRET`, `DEMO_USERNAME` and `DEMO_PASSWORD_HASH`.
+
+Auth is stateless on purpose. There's no session table, so logout only clears the cookie and a copied token stays valid until it expires. In production (`NODE_ENV=production`) the cookie is `Secure`, so the site must be served over HTTPS, with the API on the same origin behind a proxy.
+
+## Sessions gateway
+
+`SessionsGateway` keeps a `Set` of connected socket IDs. On every connect or disconnect it emits `sessions:count` with `{ count }` to all clients. Socket.io's heartbeat (25 s ping + 20 s timeout) removes clients that dropped without closing. The state is in memory, so it only works for a single API instance.
+
+## Tests
+
+- **Unit** (`npm test`): order totals, product serialization and creation rules, validation errors, auth config, the gateway counter.
+- **Integration** (`npm run test:e2e`): real HTTP requests to the compiled app and a real MySQL database. Test data is created inside transactions that are rolled back at the end, so your data stays untouched. Socket.io tests start their own server without a database and use real polling and WebSocket clients.
+
+`test:e2e` builds the app first, so the first run takes a little longer.
+
+## Docker
+
+The image compiles the app and runs as the non-root `node` user. On start, `scripts/docker-entrypoint.sh` runs `prisma migrate deploy` and then the API. If a migration fails, the API doesn't start. Seeding is never automatic. Use `docker compose exec api npx prisma db seed`.
+
+`scripts/setup-auth.mjs` accepts an output directory. Compose uses this to write credentials into `.docker/` on the host instead of into the image. Docker commands are in the [root README](../../README.md#quick-start-with-docker).

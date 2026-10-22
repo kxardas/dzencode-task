@@ -186,7 +186,7 @@ decisions for demonstrating the PDF's technologies.
   a copied JWT remains valid until expiry, including across API restarts.
   Frontend auth uses standard RTK Query Session tags, without custom cancellation,
   polling, or manual cache writes. The login form uses local React state.
-  See [authentication and evaluator access](README.md#authentication-and-evaluator-access) for the flow,
+  See [authentication and evaluator access](README.md#login) for the flow,
   deliberate limits, and production HTTPS/same-site deployment requirements.
   Automated checks cover valid/invalid login, protected writes, expiry, JWT
   validation, cookie clearing, trusted headers, and session cache refresh.
@@ -244,23 +244,62 @@ decisions for demonstrating the PDF's technologies.
 
 ## Release and delivery
 
-- [ ] **Complete behavioral tests and automated checks.** Configure frontend
-  Vitest/React Testing Library and CI. Verify totals, filtering, selection,
+- [ ] **Complete behavioral tests and automated checks.** Use frontend
+  Vitest/React Testing Library. Verify totals, filtering, selection,
   deletion confirmation/cancellation, validation, API errors, and socket
   connection tracking. Both applications pass applicable checks.
-  Frontend Vitest/React Testing Library is configured; Orders fetching tests
-  pass. CI and remaining feature coverage are planned. Review the existing
+  Frontend Vitest/React Testing Library is configured, with 112 passing tests.
+  CI is an optional improvement, not an assignment requirement; prioritize
+  Docker and deployment as agreed with the developer. Review the existing
   ESLint dependency-chain advisory reported by npm audit before submission, plus
   the existing API Prisma/driver and Nest CLI dependency advisories found while
   adding JWT. Do not use forced major upgrades as an automatic audit fix.
-- [ ] **Package the full environment with Docker Compose.** Web, API, and
+- [x] **Package the full environment with Docker Compose.** Web, API, and
   MySQL start with `docker compose up --build`. Migrations and seed setup are
   documented, database data persists, and configuration uses environment
   variables rather than production credentials in source files.
-- [ ] **Deploy and finish the README.** The evaluator can access the live
+  Multi-stage Node 26.7.0 images build web/API from lockfiles. Web uses standalone
+  output only for Docker; both application containers run as non-root. Compose
+  waits for database/API health and applies committed migrations before API
+  startup. Docker evaluator credentials are generated into ignored `.docker/`
+  files; secrets and local build artifacts are excluded from build contexts.
+  The default stack supports local HTTP. The production override enforces HTTPS
+  origin/Secure cookies and removes MySQL's host port; web/API bind to loopback
+  for the existing server proxy. A separate Caddy site example is provided.
+  Verified linux/amd64 builds, fresh-volume initialization and migrations,
+  three healthy services, explicit additive seed, API/filtering, real inventory
+  SSR and static assets, login/session/logout, unauthorized writes, product
+  creation and cascading deletion in an isolated QA database. Polling/WebSocket
+  clients verified connection counts and reconnects. Chrome verified navigation,
+  session display, and lazy chart/map assets from the container. Exact records
+  survived full Compose down/up; production origin restrictions and Secure
+  cookies also passed. Fixed the existing MySQL init script being sourced into
+  the main entrypoint: executable permissions isolate its shell options; a new
+  volume now starts without container restarts. Both app lints pass. The existing
+  local inventory remains at five orders/24 products. Live deployment verification
+  is recorded below.
+- [x] **Deploy and finish the README.** The evaluator can access the live
   application. Document prerequisites, environment variables, startup,
   migrations/seeding, API, sockets, tests, deployment, and known limitations.
   Verify browser REST and WebSocket connectivity in the deployed environment.
+  Deployed October 20, 2026 at https://dzencode-halimurka.online using an isolated
+  Compose project, new production credentials and the additive demo seed
+  (four orders/six products). All three services are healthy. Existing Caddy
+  host networking proxies loopback ports 3000/3001; MySQL has no host port.
+  Caddy configuration validation, Let's Encrypt HTTPS and HTTP redirects passed;
+  existing hosted sites retain HTTP 200 responses. Live API checks cover inventory
+  SSR/filtering, login/session/logout, Secure cookies, write protection, validation,
+  product creation and cascading deletion with temporary QA records cleaned up.
+  Public Socket.io polling/WebSocket counts, disconnect and new connection checks
+  pass. Safari verified navigation, order details, filtering and the session display.
+  README includes the live URL and update instructions. The server uses a source
+  snapshot without Git metadata; Git-based server updates require repository
+  setup in the deployed directory first.
+  The server project is under `/home/ubuntu/kaelthas/dzencode-task`, with
+  `COMPOSE_PROJECT_NAME=dzencode-task` pinned in the server `.env`.
+  Our temporary deployment archives were removed; future uploads must not
+  create `.tgz` files. Preserve `/home/ubuntu/arthur/` and other applications'
+  Caddy configuration.
 - [ ] **Perform the submission review.** Start from a fresh clone using the
   README; manually check routes, reference layouts, long titles, empty data,
   error handling, deletion, multiple tabs, and the schema import in MySQL
