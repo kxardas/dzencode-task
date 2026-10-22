@@ -79,6 +79,8 @@ apps/api/src/generated/
 docker-compose.override.yml
 
 # Local database volumes
+.docker/
+.deployment/
 mysql-data/
 postgres-data/
 

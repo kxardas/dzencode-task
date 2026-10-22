@@ -1,0 +1,15 @@
+# Use behind the server's existing HTTPS reverse proxy.
+services:
+  web:
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: ${FRONTEND_URL:?Set the public HTTPS origin in .env}/api
+        NEXT_PUBLIC_SOCKET_URL: ${FRONTEND_URL:?Set the public HTTPS origin in .env}
+
+  api:
+    environment:
+      NODE_ENV: production
+      FRONTEND_URL: ${FRONTEND_URL:?Set the public HTTPS origin in .env}
+
+  mysql:
+    ports: !reset []

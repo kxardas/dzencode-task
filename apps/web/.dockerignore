@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+.env*
+.auth-local.json
+coverage
+*.tsbuildinfo
+*.log
+.DS_Store

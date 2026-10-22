@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+src/generated
+.env*
+.auth-local.json
+coverage
+*.tsbuildinfo
+*.log
+.DS_Store
