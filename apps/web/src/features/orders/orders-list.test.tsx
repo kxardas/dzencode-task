@@ -107,12 +107,14 @@ describe("OrdersList with RTK Query", () => {
     ).toBeInTheDocument();
     const first = screen.getByRole("article", { name: orders[0].title });
     expect(within(first).getByText("2")).toBeInTheDocument();
+    expect(within(first).getByText("Продукта")).toBeInTheDocument();
     expect(first).toHaveTextContent("01.10");
     expect(first).toHaveTextContent("01 окт. 2026 г.");
     expect(first).toHaveTextContent("649,94 USD");
     expect(first).toHaveTextContent("26 650,75 UAH");
     const empty = screen.getByRole("article", { name: orders[1].title });
     expect(within(empty).getByText("0")).toBeInTheDocument();
+    expect(within(empty).getByText("Продуктов")).toBeInTheDocument();
     expect(empty).toHaveTextContent("0,00 USD");
     expect(empty).toHaveTextContent("0,00 UAH");
     expect(screen.queryByText("Загрузка приходов…")).not.toBeInTheDocument();

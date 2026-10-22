@@ -60,7 +60,9 @@ const ru = {
   ordersList: "Список приходов",
   openOrder: "Открыть приход «{title}»",
   deleteOrder: "Удалить приход «{title}»",
-  productCount: "Продуктов",
+  productCountOne: "Продукт",
+  productCountFew: "Продукта",
+  productCountMany: "Продуктов",
   orderDate: "Дата прихода:",
   total: "Общая стоимость:",
   closeDetails: "Закрыть детали прихода",
@@ -192,7 +194,9 @@ export const messages = {
     ordersList: "Список надходжень",
     openOrder: "Відкрити надходження «{title}»",
     deleteOrder: "Видалити надходження «{title}»",
-    productCount: "Продуктів",
+    productCountOne: "Продукт",
+    productCountFew: "Продукти",
+    productCountMany: "Продуктів",
     orderDate: "Дата надходження:",
     total: "Загальна вартість:",
     closeDetails: "Закрити деталі надходження",
@@ -261,6 +265,14 @@ export const messages = {
       "Укажіть ціну від 0 до 9999999999.99, не більше двох знаків після крапки.",
   } satisfies Record<MessageKey, string>,
 };
+
+// Both locales use one/few/many; "other" only applies to fractions.
+export function productCountKey(locale: Locale, count: number): MessageKey {
+  const category = new Intl.PluralRules(intlLocales[locale]).select(count);
+  if (category === "one") return "productCountOne";
+  if (category === "few") return "productCountFew";
+  return "productCountMany";
+}
 
 export function translate(
   locale: Locale,

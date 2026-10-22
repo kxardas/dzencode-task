@@ -8,6 +8,18 @@ export function formatShortDate(value: string, locale: Locale = "ru"): string {
   }).format(new Date(value));
 }
 
+export function formatNumericDate(
+  value: string,
+  locale: Locale = "ru",
+): string {
+  return new Intl.DateTimeFormat(intlLocales[locale], {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(value));
+}
+
 export function formatFullDate(value: string, locale: Locale = "ru"): string {
   return new Intl.DateTimeFormat(intlLocales[locale], {
     day: "2-digit",

@@ -1,6 +1,6 @@
 import { useLocale } from "@/i18n/locale-provider";
 import { Package } from "lucide-react";
-import { formatFullDate, formatPrice, formatShortDate } from "@/lib/format";
+import { formatFullDate, formatNumericDate, formatPrice } from "@/lib/format";
 import type { Product } from "./types";
 
 interface ProductRowProps {
@@ -53,8 +53,8 @@ export function ProductRow({ product }: ProductRowProps) {
             </time>
           </p>
           <span className="product-row__secondary">
-            {formatShortDate(product.warrantyStart, locale)} —{" "}
-            {formatShortDate(product.warrantyEnd, locale)}
+            {formatNumericDate(product.warrantyStart, locale)} —{" "}
+            {formatNumericDate(product.warrantyEnd, locale)}
           </span>
         </div>
         <div>

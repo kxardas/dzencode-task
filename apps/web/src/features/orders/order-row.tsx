@@ -1,4 +1,5 @@
 import { useLocale } from "@/i18n/locale-provider";
+import { productCountKey } from "@/i18n/messages";
 import { ChevronRight, List, Trash2 } from "lucide-react";
 import { formatFullDate, formatPrice, formatShortDate } from "@/lib/format";
 import type { OrderSummary } from "./types";
@@ -48,7 +49,9 @@ export function OrderRow({
             </button>
             <div>
               <span className="order-row__count">{order.productCount}</span>
-              <span className="order-row__label">{t("productCount")}</span>
+              <span className="order-row__label">
+                {t(productCountKey(locale, order.productCount))}
+              </span>
             </div>
           </div>
           <div className="order-row__date">

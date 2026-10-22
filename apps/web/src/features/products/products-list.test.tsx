@@ -110,7 +110,7 @@ describe("ProductsList with RTK Query", () => {
     expect(monitor).toHaveTextContent("20 500,50 UAH");
     expect(monitor).toHaveTextContent("01 окт. 2026 г.");
     expect(monitor).toHaveTextContent("01 окт. 2028 г.");
-    expect(monitor).toHaveTextContent("01.10 — 01.10");
+    expect(monitor).toHaveTextContent("01.10.2026 — 01.10.2028");
     const keyboard = screen.getByRole("article", { name: products[1].title });
     expect(keyboard).toHaveTextContent("Периферия");
     expect(keyboard).toHaveTextContent("Б/у");
